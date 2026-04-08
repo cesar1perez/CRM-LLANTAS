@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Llanterama Tulancingo - CRM Elite</title>
+    <title>Llanterama Tulancingo - CRM Maestro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -195,6 +195,7 @@
         function getImageUrl(url) {
             if (!url || url.trim().length < 10) return 'https://via.placeholder.com/400x250?text=Sin+Foto+Disponible';
             if (url.includes('drive.google.com')) {
+                // Nuevo conversor de Drive más potente
                 const id = url.split('/d/')[1]?.split('/')[0] || url.split('id=')[1];
                 return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
             }
@@ -219,7 +220,7 @@
                     if(!row[4]) continue;
                     total++;
 
-                    const [marca, vendedor, dia, zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades] = row;
+                    const [marca, vendedor, dia, zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes] = row;
                     // Forzamos que la imagen sea la columna P (índice 15)
                     const imagen = row[15];
 
