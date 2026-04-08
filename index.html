@@ -191,14 +191,30 @@
 
         function closeModal() { document.getElementById('clientModal').style.display = "none"; }
 
-        // Función Maestra para limpiar imágenes de Google Drive
-        function getImageUrl(url) {
-            if (!url || url.trim().length < 10) return 'https://via.placeholder.com/400x250?text=Sin+Foto+Disponible';
+        // --- FUNCIÓN DE IMAGEN MEJORADA (TODOTERRENO) ---
+        function getImageUrl(input) {
+            if (!input || input.trim().length < 10) return 'https://via.placeholder.com/400x250?text=Sin+Foto+Disponible';
+            
+            let url = input.trim();
+            
+            // Si pegaron el código de "incorporar" completo, extraemos solo el link
+            if (url.includes('<iframe')) {
+                const match = url.match(/src="([^"]+)"/);
+                if (match) url = match[1];
+            }
+
+            // Si es un link de Google Drive (cualquier variante)
             if (url.includes('drive.google.com')) {
-                // Nuevo conversor de Drive más potente
-                const id = url.split('/d/')[1]?.split('/')[0] || url.split('id=')[1];
+                let id = "";
+                if (url.includes('/d/')) {
+                    id = url.split('/d/')[1].split('/')[0].split('?')[0];
+                } else if (url.includes('id=')) {
+                    id = url.split('id=')[1].split('&')[0];
+                }
+                // Esta URL fuerza a Google a servir la imagen como miniatura directa
                 return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
             }
+            
             return url;
         }
 
@@ -221,13 +237,11 @@
                     total++;
 
                     const [marca, vendedor, dia, zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes] = row;
-                    // Forzamos que la imagen sea la columna P (índice 15)
-                    const imagen = row[15];
+                    const imagen = row[15]; // Columna P
 
                     statsV[vendedor] = (statsV[vendedor] || 0) + 1;
                     statsZ[zona] = (statsZ[zona] || 0) + 1;
 
-                    // Tabla
                     const tr = document.createElement('tr');
                     tr.className = "clickable-row";
                     tr.innerHTML = `
@@ -242,7 +256,6 @@
                     tr.onclick = (e) => { if(e.target.tagName !== 'A') openModal(row, i); };
                     body.appendChild(tr);
 
-                    // Mapa
                     if(ubicacion && ubicacion.includes(',')) {
                         const marker = L.marker([parseFloat(ubicacion.split(',')[0]), parseFloat(ubicacion.split(',')[1])]).addTo(map);
                         marker.on('click', () => updateSidePanel(row, i));
@@ -261,14 +274,14 @@
         function updateSidePanel(row, index) {
             const panel = document.getElementById('side-panel');
             const [marca, vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes, obs] = row;
-            const imagen = row[15]; // Columna P
+            const imagen = row[15]; 
             
             panel.classList.remove('update-anim');
             void panel.offsetWidth;
             panel.classList.add('update-anim');
 
             panel.innerHTML = `
-                <div class="client-photo"><img src="${getImageUrl(imagen)}" onerror="this.src='https://via.placeholder.com/400x250?text=Error+al+cargar+foto'"></div>
+                <div class="client-photo"><img src="${getImageUrl(imagen)}" onerror="this.src='https://via.placeholder.com/400x250?text=Error+de+Acceso+a+Foto'"></div>
                 <h3 style="color:var(--primary); margin:0;">${negocio}</h3>
                 <p style="font-size:12px; color:#666; margin-bottom:10px;">ID #${index} | Registrado por ${vendedor}</p>
                 
@@ -283,22 +296,21 @@
                 <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
                 <p style="font-size:13px;"><b>Competencia:</b> ${competencia}</p>
                 <p style="font-size:13px;"><b>Observaciones:</b> ${obs || 'Ninguna'}</p>
-                <p style="font-size:11px; color:#999; border-top: 1px solid #eee; padding-top:5px;">Registrado: ${marca}</p>
                 
-                <a href="https://www.google.com/maps/dir/?api=1&destination=${ubicacion}" target="_blank" class="btn-blue-act" style="width:100%; text-align:center;">🚀 INICIAR RUTA GPS</a>
+                <a href="http://www.google.com/maps/search/?api=1&query=${ubicacion}" target="_blank" class="btn-blue-act" style="width:100%; text-align:center;">🚀 INICIAR RUTA GPS</a>
             `;
         }
 
         function openModal(row, index) {
             const [marca, vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes, obs] = row;
-            const imagen = row[15]; // Columna P
+            const imagen = row[15]; 
             
             document.getElementById('modal-data').innerHTML = `
                 <div class="client-photo" style="height:250px;"><img src="${getImageUrl(imagen)}"></div>
                 <h2 style="color:var(--primary); margin:0;">${negocio}</h2>
                 <p style="margin:5px 0;"><b>Contacto:</b> ${contacto} (${tel})</p>
                 <p style="margin:5px 0;"><b>Giro:</b> ${giro}</p>
-                <p style="margin:5px 0;"><b>Unidades de Transporte:</b> ${unidades || 'N/A'}</p>
+                <p style="margin:5px 0;"><b>Unidades:</b> ${unidades || 'N/A'}</p>
                 <p style="margin:5px 0;"><b>Competencia:</b> ${competencia}</p>
                 <p style="margin:5px 0;"><b>Interés:</b> ${interes}</p>
                 <p style="margin:5px 0;"><b>Observaciones:</b> ${obs || 'N/A'}</p>
