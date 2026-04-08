@@ -4,16 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRM Llantas - Road Master</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         :root {
-            --primary: #0f172a; /* Azul oscuro corporativo */
-            --secondary: #3b82f6; /* Azul brillante */
+            --primary: #0f172a;
+            --secondary: #3b82f6;
             --bg-color: #f8fafc;
             --text-dark: #1e293b;
             --text-light: #64748b;
-            --success: #10b981; /* Verde */
-            --warning: #f59e0b; /* Amarillo */
-            --danger: #ef4444; /* Rojo */
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
         }
 
         body {
@@ -24,7 +25,6 @@
             color: var(--text-dark);
         }
 
-        /* Barra de navegación */
         .navbar {
             background-color: var(--primary);
             color: white;
@@ -35,20 +35,15 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        .navbar h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
+        .navbar h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
 
-        /* Contenedor principal */
         .container {
             padding: 2rem;
-            max-width: 1400px;
+            max-width: 100%;
+            box-sizing: border-box;
             margin: 0 auto;
         }
 
-        /* Tarjetas del Dashboard */
         .dashboard {
             display: flex;
             gap: 1.5rem;
@@ -77,12 +72,12 @@
             color: var(--text-dark);
         }
 
-        /* Tabla del CRM */
         .table-wrapper {
             background: white;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             overflow-x: auto;
+            max-height: 70vh;
         }
 
         table {
@@ -99,30 +94,32 @@
             font-size: 0.85rem;
             text-transform: uppercase;
             border-bottom: 2px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         td {
-            padding: 1rem;
+            padding: 0.75rem 1rem;
             border-bottom: 1px solid #e2e8f0;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        tr:hover {
-            background-color: #f8fafc;
-        }
+        tr:hover { background-color: #f8fafc; }
 
-        /* Etiquetas de Interés */
         .badge {
             padding: 0.25rem 0.75rem;
             border-radius: 999px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
+            text-transform: uppercase;
         }
+        
         .badge.alto { background-color: #d1fae5; color: var(--success); }
         .badge.medio { background-color: #fef3c7; color: var(--warning); }
         .badge.bajo { background-color: #fee2e2; color: var(--danger); }
+        .badge.default { background-color: #e2e8f0; color: var(--text-light); }
 
-        /* Botón WhatsApp */
         .btn-wa {
             background-color: #25D366;
             color: white;
@@ -133,14 +130,18 @@
             font-size: 0.8rem;
             display: inline-block;
         }
-        .btn-wa:hover {
-            background-color: #1ebd57;
-        }
+        .btn-wa:hover { background-color: #1ebd57; }
 
-        /* Highlight Flotillas */
         .flotilla-highlight {
             font-weight: bold;
             color: var(--secondary);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.2rem;
+            color: var(--text-light);
         }
     </style>
 </head>
@@ -148,22 +149,22 @@
 
     <header class="navbar">
         <h1>Road Master - CRM División Llantas</h1>
-        <div style="font-size: 0.9rem;">Vista Ejecutiva</div>
+        <div style="font-size: 0.9rem;">Sincronización en tiempo real</div>
     </header>
 
     <div class="container">
         <div class="dashboard">
             <div class="card">
                 <h3>Total Prospectos</h3>
-                <div class="value" id="total-prospectos">24</div>
+                <div class="value" id="total-prospectos">0</div>
             </div>
             <div class="card" style="border-left-color: #10b981;">
                 <h3>Camiones en Flotillas (Potencial)</h3>
-                <div class="value" id="total-camiones">185</div>
+                <div class="value" id="total-camiones">0</div>
             </div>
             <div class="card" style="border-left-color: #f59e0b;">
-                <h3>Principal Competidor</h3>
-                <div class="value" style="font-size: 1.5rem; margin-top: 0.5rem;">Michelin / Bridgestone</div>
+                <h3>Última Actualización</h3>
+                <div class="value" id="ultima-fecha" style="font-size: 1.2rem; margin-top: 0.8rem;">Cargando...</div>
             </div>
         </div>
 
@@ -171,51 +172,119 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Fecha Visita</th>
+                        <th>Registro</th>
                         <th>Vendedor</th>
+                        <th>Día Visita</th>
                         <th>Zona</th>
-                        <th>Empresa / Negocio</th>
+                        <th>Negocio / Razón Social</th>
+                        <th>Giro</th>
                         <th>Contacto</th>
                         <th>Teléfono</th>
                         <th>Competencia / Precio</th>
                         <th>Tamaño Flotilla</th>
-                        <th>Nivel Interés</th>
-                        <th>Estatus CRM</th>
+                        <th>Interés</th>
+                        <th>Observaciones</th>
                         <th>Acción</th>
                     </tr>
                 </thead>
                 <tbody id="crm-data">
-                    <tr>
-                        <td>08/04/2026</td>
-                        <td>Juan Pérez</td>
-                        <td>Norte</td>
-                        <td><strong>Transportes El Águila</strong></td>
-                        <td>Carlos Mendoza</td>
-                        <td>5512345678</td>
-                        <td>Michelin ($8,500)</td>
-                        <td class="flotilla-highlight">45 camiones</td>
-                        <td><span class="badge alto">Alto</span></td>
-                        <td><select><option>Primer Contacto</option><option selected>Cotización Enviada</option><option>Cierre</option></select></td>
-                        <td><a href="https://wa.me/525512345678?text=Hola Carlos, te saludo de Road Master..." target="_blank" class="btn-wa">WhatsApp</a></td>
-                    </tr>
-                    
-                    <tr>
-                        <td>07/04/2026</td>
-                        <td>Ana Gómez</td>
-                        <td>Centro</td>
-                        <td>Llantera La Central</td>
-                        <td>Roberto Ruiz</td>
-                        <td>5598765432</td>
-                        <td>Marcas Chinas</td>
-                        <td>N/A</td>
-                        <td><span class="badge medio">Medio</span></td>
-                        <td><select><option selected>Nuevo Prospecto</option><option>Cotización Enviada</option><option>Cierre</option></select></td>
-                        <td><a href="https://wa.me/525598765432" target="_blank" class="btn-wa">WhatsApp</a></td>
-                    </tr>
+                    <tr><td colspan="13" class="loading">Sincronizando con Google Sheets...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
+    <script>
+        // Tu enlace exacto de Google Sheets CSV
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-VTTO816SWHrV1zM7ipVS6PNKoI8QBrBmvVTeR7xij0HvXvhrxDGOP1QH-t9MVe7IhFvlfkLUddhN/pub?output=csv';
+
+        Papa.parse(csvUrl, {
+            download: true,
+            header: false, // Usamos índices para evitar errores por cambios minúsculos en los títulos
+            skipEmptyLines: true,
+            complete: function(results) {
+                const data = results.data;
+                const tableBody = document.getElementById('crm-data');
+                
+                // Si solo hay encabezados o está vacío
+                if(data.length <= 1) {
+                    tableBody.innerHTML = '<tr><td colspan="13" class="loading">No hay datos registrados aún.</td></tr>';
+                    return;
+                }
+
+                tableBody.innerHTML = ''; // Limpiar mensaje de carga
+                
+                let totalCamiones = 0;
+                let ultimaFecha = '';
+
+                // Empezamos desde 1 para saltar la fila de títulos de Google Sheets
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    
+                    // Mapeo de tus columnas exactas por índice
+                    const marcaTemporal = row[0] || '';
+                    const vendedor = row[1] || '';
+                    const diaVisita = row[2] || '';
+                    const zona = row[3] || '';
+                    const negocio = row[4] || '';
+                    const giro = row[5] || '';
+                    const contacto = row[6] || '';
+                    const telefono = row[7] || '';
+                    const competencia = row[10] || '';
+                    const camionesRaw = row[11] || '0';
+                    const interes = row[12] || '';
+                    const observaciones = row[13] || '';
+                    
+                    ultimaFecha = marcaTemporal; // Guarda la más reciente
+
+                    // Lógica para sumar camiones (limpiando texto si el vendedor escribe "10 camiones")
+                    const camionesNum = parseInt(camionesRaw.replace(/[^0-9]/g, '')) || 0;
+                    totalCamiones += camionesNum;
+
+                    // Estilos dinámicos
+                    const camionesDisplay = camionesNum > 0 ? `<span class="flotilla-highlight">${camionesNum}</span>` : 'N/A';
+                    
+                    let interesBadge = 'default';
+                    let interesLower = interes.toLowerCase();
+                    if(interesLower.includes('alto')) interesBadge = 'alto';
+                    else if(interesLower.includes('medio')) interesBadge = 'medio';
+                    else if(interesLower.includes('bajo')) interesBadge = 'bajo';
+
+                    // Botón de WhatsApp limpiando el número
+                    const phoneClean = telefono.replace(/[^0-9]/g, '');
+                    const waLink = phoneClean.length >= 10 
+                        ? `<a href="https://wa.me/52${phoneClean}?text=Hola ${contacto}, te saludo de Road Master Llantas..." target="_blank" class="btn-wa">WhatsApp</a>` 
+                        : '<span style="color: #cbd5e1; font-size: 0.8rem;">Sin número</span>';
+
+                    // Construcción de la fila
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${marcaTemporal.split(' ')[0]}</td>
+                        <td>${vendedor}</td>
+                        <td>${diaVisita}</td>
+                        <td>${zona}</td>
+                        <td><strong>${negocio}</strong></td>
+                        <td>${giro}</td>
+                        <td>${contacto}</td>
+                        <td>${telefono}</td>
+                        <td title="${competencia}">${competencia.length > 25 ? competencia.substring(0,25) + '...' : competencia}</td>
+                        <td>${camionesDisplay}</td>
+                        <td><span class="badge ${interesBadge}">${interes || '-'}</span></td>
+                        <td title="${observaciones}">${observaciones.length > 20 ? observaciones.substring(0,20) + '...' : observaciones}</td>
+                        <td>${waLink}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                }
+
+                // Actualizar Dashboard
+                document.getElementById('total-prospectos').textContent = data.length - 1;
+                document.getElementById('total-camiones').textContent = totalCamiones;
+                document.getElementById('ultima-fecha').textContent = ultimaFecha.split(' ')[0] || '-';
+            },
+            error: function(err) {
+                document.getElementById('crm-data').innerHTML = `<tr><td colspan="13" class="loading" style="color: red;">Error al cargar datos. Verifica que el link sea público.</td></tr>`;
+            }
+        });
+    </script>
 </body>
 </html>
