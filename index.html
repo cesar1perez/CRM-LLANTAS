@@ -3,286 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Llantas - Road Master</title>
+    <title>Road Master - CRM Llantas Elite</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --primary: #0f172a;
             --secondary: #3b82f6;
-            --bg-color: #f8fafc;
-            --text-dark: #1e293b;
-            --text-light: #64748b;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
+            --accent: #f59e0b;
+            --bg-color: #f1f5f9;
+            --white: #ffffff;
         }
 
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        body, html {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
-            margin: 0;
-            padding: 0;
-            color: var(--text-dark);
+            height: 100%;
         }
 
-        .navbar {
-            background-color: var(--primary);
+        /* Navegación Principal */
+        .sidebar {
+            background: var(--primary);
             color: white;
-            padding: 1rem 2rem;
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
 
-        .navbar h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
-
-        .container {
-            padding: 2rem;
-            max-width: 100%;
-            box-sizing: border-box;
-            margin: 0 auto;
-        }
-
-        .dashboard {
-            display: flex;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            flex: 1;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-left: 4px solid var(--secondary);
-        }
-
-        .card h3 {
-            margin: 0 0 0.5rem 0;
-            color: var(--text-light);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-        }
-
-        .card .value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--text-dark);
-        }
-
-        .table-wrapper {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            overflow-x: auto;
-            max-height: 70vh;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        th {
-            background-color: #f1f5f9;
-            color: var(--text-light);
-            padding: 1rem;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            border-bottom: 2px solid #e2e8f0;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        td {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 0.85rem;
-        }
-
-        tr:hover { background-color: #f8fafc; }
-
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        
-        .badge.alto { background-color: #d1fae5; color: var(--success); }
-        .badge.medio { background-color: #fef3c7; color: var(--warning); }
-        .badge.bajo { background-color: #fee2e2; color: var(--danger); }
-        .badge.default { background-color: #e2e8f0; color: var(--text-light); }
-
-        .btn-wa {
-            background-color: #25D366;
+        .nav-buttons button {
+            background: rgba(255,255,255,0.1);
+            border: none;
             color: white;
-            padding: 0.4rem 0.8rem;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 0.8rem;
-            display: inline-block;
+            padding: 10px 20px;
+            margin-left: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
         }
-        .btn-wa:hover { background-color: #1ebd57; }
 
-        .flotilla-highlight {
-            font-weight: bold;
-            color: var(--secondary);
+        .nav-buttons button:hover { background: var(--secondary); }
+
+        /* Vistas */
+        .view-section { display: none; padding: 20px; animation: fadeIn 0.5s; }
+        .view-section.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Pantalla de Inicio (Portada) */
+        .home-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
         }
-        
-        .loading {
+
+        .home-card {
+            background: var(--white);
+            padding: 40px;
             text-align: center;
-            padding: 2rem;
-            font-size: 1.2rem;
-            color: var(--text-light);
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.3s;
         }
+
+        .home-card:hover { transform: translateY(-10px); border-bottom: 5px solid var(--secondary); }
+        .home-card i { font-size: 50px; color: var(--secondary); display: block; margin-bottom: 15px; }
+
+        /* Tabla y Mapa */
+        .table-container { background: white; border-radius: 10px; overflow: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+        th { background: #f8fafc; padding: 15px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 12px; text-transform: uppercase; }
+        td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+
+        #map { height: 70vh; width: 100%; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        /* Badges */
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .alto { background: #dcfce7; color: #166534; }
+        .medio { background: #fef9c3; color: #854d0e; }
+        .bajo { background: #fee2e2; color: #991b1b; }
+        .btn-wa { background: #25D366; color: white; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; }
+
+        .kpi-container { display: flex; gap: 20px; margin-bottom: 20px; }
+        .kpi-card { background: white; padding: 20px; border-radius: 10px; flex: 1; border-left: 5px solid var(--secondary); }
+        .kpi-card span { display: block; color: #64748b; font-size: 12px; }
+        .kpi-card strong { font-size: 24px; color: var(--primary); }
     </style>
 </head>
 <body>
 
-    <header class="navbar">
-        <h1>Road Master - CRM División Llantas</h1>
-        <div style="font-size: 0.9rem;">Sincronización en tiempo real</div>
-    </header>
+    <div class="sidebar">
+        <div>
+            <strong style="font-size: 20px; letter-spacing: 1px;">ROAD MASTER</strong>
+            <span style="color: var(--secondary); font-size: 12px; margin-left: 10px;">Llantas Prospect Manager</span>
+        </div>
+        <div class="nav-buttons">
+            <button onclick="showView('home')">Inicio</button>
+            <button onclick="showView('crm')">Pipeline</button>
+            <button onclick="showView('mapa-view')">Mapa de Ruta</button>
+        </div>
+    </div>
 
-    <div class="container">
-        <div class="dashboard">
-            <div class="card">
-                <h3>Total Prospectos</h3>
-                <div class="value" id="total-prospectos">0</div>
-            </div>
-            <div class="card" style="border-left-color: #10b981;">
-                <h3>Camiones en Flotillas (Potencial)</h3>
-                <div class="value" id="total-camiones">0</div>
-            </div>
-            <div class="card" style="border-left-color: #f59e0b;">
-                <h3>Última Actualización</h3>
-                <div class="value" id="ultima-fecha" style="font-size: 1.2rem; margin-top: 0.8rem;">Cargando...</div>
-            </div>
+    <div id="home" class="view-section active">
+        <h1 style="text-align: center; color: var(--primary);">Bienvenido al CRM Road Master</h1>
+        <p style="text-align: center; color: #64748b;">Selecciona una herramienta para comenzar</p>
+        
+        <div class="kpi-container">
+            <div class="kpi-card"><span>Total Prospectos</span><strong id="kpi-total">0</strong></div>
+            <div class="kpi-card" style="border-left-color: var(--accent);"><span>Potencial Flotilla</span><strong id="kpi-camiones">0</strong></div>
+            <div class="kpi-card" style="border-left-color: #10b981;"><span>Ubicaciones Listas</span><strong id="kpi-mapa">0</strong></div>
         </div>
 
-        <div class="table-wrapper">
-            <table>
+        <div class="home-grid">
+            <div class="home-card" onclick="showView('crm')">
+                <div style="font-size: 40px;">📊</div>
+                <h3>Pipeline de Ventas</h3>
+                <p>Gestiona la lista detallada de clientes, precios y competencia.</p>
+            </div>
+            <div class="home-card" onclick="showView('mapa-view')">
+                <div style="font-size: 40px;">📍</div>
+                <h3>Mapa Geo-Localizado</h3>
+                <p>Visualiza la ubicación exacta de tus prospectos en el mapa.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="crm" class="view-section">
+        <h2 style="margin-bottom: 20px;">Listado de Prospectos Actualizado</h2>
+        <div class="table-container">
+            <table id="mainTable">
                 <thead>
                     <tr>
-                        <th>Registro</th>
+                        <th>Fecha</th>
                         <th>Vendedor</th>
-                        <th>Día Visita</th>
                         <th>Zona</th>
-                        <th>Negocio / Razón Social</th>
+                        <th>Negocio</th>
                         <th>Giro</th>
                         <th>Contacto</th>
                         <th>Teléfono</th>
                         <th>Competencia / Precio</th>
-                        <th>Tamaño Flotilla</th>
+                        <th>Camiones</th>
                         <th>Interés</th>
-                        <th>Observaciones</th>
                         <th>Acción</th>
                     </tr>
                 </thead>
-                <tbody id="crm-data">
-                    <tr><td colspan="13" class="loading">Sincronizando con Google Sheets...</td></tr>
+                <tbody id="tableBody">
+                    <tr><td colspan="11" style="text-align:center; padding: 50px;">Cargando base de datos...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
+    <div id="mapa-view" class="view-section">
+        <h2 style="margin-bottom: 20px;">Cobertura Geográfica de Prospectos</h2>
+        <div id="map"></div>
+    </div>
+
     <script>
-        // Tu enlace exacto de Google Sheets CSV
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-VTTO816SWHrV1zM7ipVS6PNKoI8QBrBmvVTeR7xij0HvXvhrxDGOP1QH-t9MVe7IhFvlfkLUddhN/pub?output=csv';
+        let map;
+        let markers = [];
+
+        function showView(viewId) {
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            if(viewId === 'mapa-view') {
+                setTimeout(() => map.invalidateSize(), 200);
+            }
+        }
+
+        // Inicializar Mapa
+        map = L.map('map').setView([20.0842, -98.3672], 6); // Centro de México aprox
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         Papa.parse(csvUrl, {
             download: true,
-            header: false, // Usamos índices para evitar errores por cambios minúsculos en los títulos
-            skipEmptyLines: true,
+            header: false,
             complete: function(results) {
                 const data = results.data;
-                const tableBody = document.getElementById('crm-data');
-                
-                // Si solo hay encabezados o está vacío
-                if(data.length <= 1) {
-                    tableBody.innerHTML = '<tr><td colspan="13" class="loading">No hay datos registrados aún.</td></tr>';
-                    return;
-                }
-
-                tableBody.innerHTML = ''; // Limpiar mensaje de carga
+                const tableBody = document.getElementById('tableBody');
+                tableBody.innerHTML = '';
                 
                 let totalCamiones = 0;
-                let ultimaFecha = '';
+                let ubicacionesCount = 0;
 
-                // Empezamos desde 1 para saltar la fila de títulos de Google Sheets
                 for (let i = 1; i < data.length; i++) {
                     const row = data[i];
-                    
-                    // Mapeo de tus columnas exactas por índice
-                    const marcaTemporal = row[0] || '';
-                    const vendedor = row[1] || '';
-                    const diaVisita = row[2] || '';
-                    const zona = row[3] || '';
-                    const negocio = row[4] || '';
-                    const giro = row[5] || '';
-                    const contacto = row[6] || '';
-                    const telefono = row[7] || '';
-                    const competencia = row[10] || '';
-                    const camionesRaw = row[11] || '0';
-                    const interes = row[12] || '';
-                    const observaciones = row[13] || '';
-                    
-                    ultimaFecha = marcaTemporal; // Guarda la más reciente
+                    if(!row[4]) continue; // Salta si no hay nombre de negocio
 
-                    // Lógica para sumar camiones (limpiando texto si el vendedor escribe "10 camiones")
-                    const camionesNum = parseInt(camionesRaw.replace(/[^0-9]/g, '')) || 0;
-                    totalCamiones += camionesNum;
+                    // Mapeo exacto según tus columnas
+                    const [fecha, vendedor, dia, zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, camiones, interes, obs] = row;
 
-                    // Estilos dinámicos
-                    const camionesDisplay = camionesNum > 0 ? `<span class="flotilla-highlight">${camionesNum}</span>` : 'N/A';
-                    
-                    let interesBadge = 'default';
-                    let interesLower = interes.toLowerCase();
-                    if(interesLower.includes('alto')) interesBadge = 'alto';
-                    else if(interesLower.includes('medio')) interesBadge = 'medio';
-                    else if(interesLower.includes('bajo')) interesBadge = 'bajo';
+                    // Sumar camiones
+                    const nCamiones = parseInt(camiones) || 0;
+                    totalCamiones += nCamiones;
 
-                    // Botón de WhatsApp limpiando el número
-                    const phoneClean = telefono.replace(/[^0-9]/g, '');
-                    const waLink = phoneClean.length >= 10 
-                        ? `<a href="https://wa.me/52${phoneClean}?text=Hola ${contacto}, te saludo de Road Master Llantas..." target="_blank" class="btn-wa">WhatsApp</a>` 
-                        : '<span style="color: #cbd5e1; font-size: 0.8rem;">Sin número</span>';
+                    // Lógica de Mapa (Parsing de coordenadas)
+                    if(ubicacion && ubicacion.includes(',')) {
+                        const coords = ubicacion.split(',');
+                        const lat = parseFloat(coords[0]);
+                        const lng = parseFloat(coords[1]);
+                        if(!isNaN(lat)) {
+                            L.marker([lat, lng]).addTo(map)
+                                .bindPopup(`<b>${negocio}</b><br>${vendedor}<br><a href="https://wa.me/52${tel.replace(/\D/g,'')}" target="_blank">WhatsApp</a>`);
+                            ubicacionesCount++;
+                        }
+                    }
 
-                    // Construcción de la fila
+                    // Render Tabla
                     const tr = document.createElement('tr');
+                    const intClass = interes.toLowerCase().includes('alto') ? 'alto' : (interes.toLowerCase().includes('medio') ? 'medio' : 'bajo');
+                    
                     tr.innerHTML = `
-                        <td>${marcaTemporal.split(' ')[0]}</td>
+                        <td>${fecha.split(' ')[0]}</td>
                         <td>${vendedor}</td>
-                        <td>${diaVisita}</td>
                         <td>${zona}</td>
                         <td><strong>${negocio}</strong></td>
                         <td>${giro}</td>
                         <td>${contacto}</td>
-                        <td>${telefono}</td>
-                        <td title="${competencia}">${competencia.length > 25 ? competencia.substring(0,25) + '...' : competencia}</td>
-                        <td>${camionesDisplay}</td>
-                        <td><span class="badge ${interesBadge}">${interes || '-'}</span></td>
-                        <td title="${observaciones}">${observaciones.length > 20 ? observaciones.substring(0,20) + '...' : observaciones}</td>
-                        <td>${waLink}</td>
+                        <td>${tel}</td>
+                        <td>${competencia}</td>
+                        <td>${nCamiones > 0 ? '<b>'+nCamiones+'</b>' : '0'}</td>
+                        <td><span class="badge ${intClass}">${interes}</span></td>
+                        <td><a href="https://wa.me/52${tel.replace(/\D/g,'')}" class="btn-wa" target="_blank">WhatsApp</a></td>
                     `;
                     tableBody.appendChild(tr);
                 }
 
-                // Actualizar Dashboard
-                document.getElementById('total-prospectos').textContent = data.length - 1;
-                document.getElementById('total-camiones').textContent = totalCamiones;
-                document.getElementById('ultima-fecha').textContent = ultimaFecha.split(' ')[0] || '-';
-            },
-            error: function(err) {
-                document.getElementById('crm-data').innerHTML = `<tr><td colspan="13" class="loading" style="color: red;">Error al cargar datos. Verifica que el link sea público.</td></tr>`;
+                // Actualizar KPIs de la Portada
+                document.getElementById('kpi-total').textContent = data.length - 1;
+                document.getElementById('kpi-camiones').textContent = totalCamiones;
+                document.getElementById('kpi-mapa').textContent = ubicacionesCount;
             }
         });
     </script>
