@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Llanterama Tulancingo - CRM Pro</title>
+    <title>Llanterama Tulancingo - CRM Elite</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -14,129 +14,138 @@
             --accent: #25D366;
             --bg: #f4f7f9;
             --white: #ffffff;
+            --text: #333333;
         }
 
-        * { box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { margin: 0; background-color: var(--bg); color: #333; }
+        * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+        body { margin: 0; background-color: var(--bg); color: var(--text); overflow-x: hidden; }
 
-        /* Estilos de Título y Nav */
-        nav {
-            background: var(--white);
-            padding: 10px 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 3px solid var(--primary);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
+        /* --- TÍTULO DINÁMICO --- */
         .dynamic-title {
-            font-size: 28px;
-            font-weight: 900;
-            text-transform: uppercase;
+            font-size: 32px; font-weight: 900; text-transform: uppercase;
             background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shine 3s linear infinite;
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite; margin: 5px 0;
         }
         @keyframes shine { to { background-position: 200% center; } }
+
+        nav {
+            background: var(--white); padding: 10px 5%; display: flex;
+            justify-content: space-between; align-items: center;
+            border-bottom: 3px solid var(--primary); position: sticky; top: 0; z-index: 1000;
+        }
 
         .container { width: 95%; max-width: 1300px; margin: 20px auto; }
         .view-section { display: none; }
         .view-section.active { display: block; }
 
-        /* Estilo de la Foto */
-        .img-container {
-            width: 100%;
-            height: 200px;
-            background: #eee;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #ddd;
-        }
-        .img-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .btn-back {
+            background: #e2e8f0; border: none; padding: 10px 20px; border-radius: 8px;
+            cursor: pointer; font-weight: bold; color: var(--primary); margin-bottom: 15px;
         }
 
-        /* Tabla con click en renglón */
-        .table-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        /* --- DASHBOARD INICIO --- */
+        .home-hero { text-align: center; padding: 30px; background: var(--white); border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--white); padding: 20px; border-radius: 15px; border-left: 5px solid var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .stat-card h4 { margin: 0; font-size: 12px; color: #666; text-transform: uppercase; }
+        .stat-card div { font-size: 24px; font-weight: bold; color: var(--primary); margin: 5px 0; }
+        .stat-list { font-size: 13px; text-align: left; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+
+        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .action-btn {
+            background: var(--white); padding: 30px; border-radius: 20px; text-align: center;
+            text-decoration: none; color: var(--text); border: 2px solid #eee; transition: 0.3s;
+        }
+        .action-btn:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .btn-blue-act { background: var(--primary); color: white; padding: 12px 25px; border-radius: 50px; display: inline-block; margin-top: 15px; font-weight: bold; }
+
+        /* --- LISTADO --- */
+        .table-container { background: white; padding: 20px; border-radius: 15px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        tr.clickable { cursor: pointer; transition: 0.2s; }
-        tr.clickable:hover { background: #f0f7ff !important; }
+        tr.clickable-row { cursor: pointer; transition: 0.2s; }
+        tr.clickable-row:hover { background: #f0f9ff; }
         th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; border-bottom: 2px solid var(--primary); }
         td { padding: 12px; border-bottom: 1px solid #eee; }
+        .btn-whatsapp { background: var(--accent); color: white; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 11px; }
 
-        /* Modal (Ventana Emergente para Fotos) */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0; top: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-        }
-        .modal-content {
-            background: white;
-            margin: 5% auto;
-            padding: 20px;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 20px;
-            position: relative;
-        }
-        .close-modal { position: absolute; right: 20px; top: 10px; font-size: 30px; cursor: pointer; }
-
-        /* Mapa Layout */
-        .map-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; height: 75vh; }
+        /* --- MAPA Y PANEL --- */
+        .map-layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; height: 75vh; }
         #map { border-radius: 15px; border: 1px solid #ccc; }
-        .info-panel { background: white; border-radius: 15px; padding: 20px; border: 1px solid #ccc; overflow-y: auto; }
+        .info-panel { background: white; border-radius: 15px; padding: 20px; border: 1px solid #ccc; overflow-y: auto; position: relative; }
         
-        .btn-blue { background: var(--primary); color: white; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; display: block; text-align: center; margin-top: 10px; }
-        .btn-wa { background: var(--accent); color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 11px; }
-
-        @media (max-width: 900px) {
-            .map-layout { grid-template-columns: 1fr; height: auto; }
-            #map { height: 350px; }
+        .client-photo {
+            width: 100%; height: 220px; background: #eee; border-radius: 10px; 
+            margin-bottom: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+            border: 1px solid #ddd;
         }
+        .client-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+        @keyframes flashUpdate {
+            0% { background-color: var(--white); }
+            50% { background-color: #e0f2fe; }
+            100% { background-color: var(--white); }
+        }
+        .update-anim { animation: flashUpdate 0.5s ease; }
+
+        /* --- MODAL --- */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+        .modal-content { background: white; margin: 5% auto; padding: 25px; width: 95%; max-width: 500px; border-radius: 20px; position: relative; }
+        .close-btn { position: absolute; top: 10px; right: 20px; font-size: 30px; cursor: pointer; }
+
+        @media (max-width: 900px) { .map-layout { grid-template-columns: 1fr; height: auto; } #map { height: 400px; } }
     </style>
 </head>
 <body>
 
     <nav>
         <div class="dynamic-title">Llanterama Tulancingo</div>
-        <div style="font-size: 12px; font-weight: bold;">FOTOGRAFÍA & GPS</div>
+        <div style="font-size: 12px; color: #666; font-weight: bold;">PANEL DE CONTROL 2026</div>
     </nav>
 
     <div class="container">
         
         <div id="home" class="view-section active">
-            <div style="text-align:center; padding: 40px; background:white; border-radius:20px; margin-bottom:20px;">
-                <h1 class="dynamic-title" style="font-size: 40px;">Prospectos en Llantas</h1>
-                <p>Base de datos con evidencia fotográfica y ubicación real.</p>
-                
-                <div style="display:flex; justify-content:center; gap:20px; margin-top:30px;">
-                    <button onclick="showView('lista')" style="padding:15px 30px; background:var(--primary); color:white; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">📋 LISTADO DE CLIENTES</button>
-                    <button onclick="showView('mapa-view')" style="padding:15px 30px; background:var(--secondary); color:white; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">📍 MAPA DE RUTA</button>
+            <div class="home-hero"><div class="dynamic-title" style="font-size: 45px;">Prospectos en Llantas</div></div>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h4>Total Prospectos Realizados</h4>
+                    <div id="count-total">0</div>
+                    <div class="stat-list" id="list-vendedores">Cargando vendedores...</div>
                 </div>
+                <div class="stat-card" style="border-left-color: var(--secondary);">
+                    <h4>Prospectos por Zona</h4>
+                    <div id="count-zonas">0</div>
+                    <div class="stat-list" id="list-zonas">Cargando zonas...</div>
+                </div>
+            </div>
+
+            <div class="action-grid">
+                <a href="#" class="action-btn" onclick="showView('lista')">
+                    <div style="font-size: 40px;">📋</div>
+                    <h3>Listado de Prospectos</h3>
+                    <p>Historial con fotografías y datos completos.</p>
+                    <div class="btn-blue-act">VER LISTADO</div>
+                </a>
+                <a href="#" class="action-btn" onclick="showView('mapa-view')">
+                    <div style="font-size: 40px;">📍</div>
+                    <h3>Mapa Logístico</h3>
+                    <p>Rutas GPS y ubicación de prospectos.</p>
+                    <div class="btn-blue-act" style="background:var(--secondary)">ABRIR MAPA</div>
+                </a>
             </div>
         </div>
 
         <div id="lista" class="view-section">
-            <button onclick="showView('home')" style="margin-bottom:10px;">← Volver</button>
+            <button class="btn-back" onclick="showView('home')">← VOLVER AL INICIO</button>
             <div class="table-container">
-                <h3>Base de Datos (Haz clic en un renglón para ver la foto)</h3>
+                <h2 style="color:var(--primary); margin:0 0 10px 0;">Base de Datos de Prospectos</h2>
                 <table>
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Fecha/Hora</th>
                             <th>Negocio</th>
                             <th>Giro</th>
                             <th>Contacto</th>
@@ -150,12 +159,13 @@
         </div>
 
         <div id="mapa-view" class="view-section">
-            <button onclick="showView('home')" style="margin-bottom:10px;">← Volver</button>
+            <button class="btn-back" onclick="showView('home')">← VOLVER AL INICIO</button>
             <div class="map-layout">
                 <div id="map"></div>
                 <div class="info-panel" id="side-panel">
-                    <div style="text-align:center; padding-top:50px; color:#999;">
-                        <p>Selecciona un cliente para ver su foto e información.</p>
+                    <div id="panel-content" style="text-align:center; padding-top: 50px; color: #999;">
+                        <div style="font-size: 40px;">📍</div>
+                        <p>Selecciona un punto en el mapa para ver la ficha completa.</p>
                     </div>
                 </div>
             </div>
@@ -164,7 +174,7 @@
 
     <div id="clientModal" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <span class="close-btn" onclick="closeModal()">×</span>
             <div id="modal-data"></div>
         </div>
     </div>
@@ -172,7 +182,6 @@
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-VTTO816SWHrV1zM7ipVS6PNKoI8QBrBmvVTeR7xij0HvXvhrxDGOP1QH-t9MVe7IhFvlfkLUddhN/pub?output=csv';
         let map;
-        let globalData = [];
 
         function showView(id) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
@@ -182,11 +191,11 @@
 
         function closeModal() { document.getElementById('clientModal').style.display = "none"; }
 
-        // Función para limpiar links de Google Drive y hacerlos visibles
-        function formatDriveLink(url) {
-            if (!url) return '';
+        // Función Maestra para limpiar imágenes de Google Drive
+        function getImageUrl(url) {
+            if (!url || url.trim().length < 10) return 'https://via.placeholder.com/400x250?text=Sin+Foto+Disponible';
             if (url.includes('drive.google.com')) {
-                let id = url.split('/d/')[1]?.split('/')[0] || url.split('id=')[1];
+                const id = url.split('/d/')[1]?.split('/')[0] || url.split('id=')[1];
                 return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
             }
             return url;
@@ -199,84 +208,103 @@
             download: true,
             header: false,
             complete: function(results) {
-                globalData = results.data;
+                const data = results.data;
                 const body = document.getElementById('tableBody');
                 body.innerHTML = '';
 
-                for (let i = 1; i < globalData.length; i++) {
-                    const row = globalData[i];
+                let statsV = {}, statsZ = {}, total = 0;
+
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
                     if(!row[4]) continue;
+                    total++;
 
-                    // Mapeo (Asegúrate que la columna 14 o la que agregaste sea la de imagen)
-                    const [fecha, vendedor, , zona, negocio, giro, contacto, tel, , ubicacion, , unidades, , , imagen] = row;
+                    const [marca, vendedor, dia, zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades] = row;
+                    // Forzamos que la imagen sea la columna P (índice 15)
+                    const imagen = row[15];
 
-                    // Llenar Tabla
+                    statsV[vendedor] = (statsV[vendedor] || 0) + 1;
+                    statsZ[zona] = (statsZ[zona] || 0) + 1;
+
+                    // Tabla
                     const tr = document.createElement('tr');
-                    tr.className = "clickable";
+                    tr.className = "clickable-row";
                     tr.innerHTML = `
                         <td>${i}</td>
+                        <td><small>${marca}</small></td>
                         <td><strong>${negocio}</strong></td>
                         <td>${giro}</td>
                         <td>${contacto}</td>
                         <td>${unidades || 'N/A'}</td>
-                        <td><a href="https://wa.me/52${tel.replace(/\D/g,'')}" class="btn-wa" target="_blank">WhatsApp</a></td>
+                        <td><a href="https://wa.me/52${tel.replace(/\D/g,'')}" class="btn-whatsapp" target="_blank">WHATSAPP</a></td>
                     `;
-                    tr.onclick = () => openClientModal(row, i);
+                    tr.onclick = (e) => { if(e.target.tagName !== 'A') openModal(row, i); };
                     body.appendChild(tr);
 
-                    // Marcadores
+                    // Mapa
                     if(ubicacion && ubicacion.includes(',')) {
-                        const coords = ubicacion.split(',');
-                        const marker = L.marker([parseFloat(coords[0]), parseFloat(coords[1])]).addTo(map);
+                        const marker = L.marker([parseFloat(ubicacion.split(',')[0]), parseFloat(ubicacion.split(',')[1])]).addTo(map);
                         marker.on('click', () => updateSidePanel(row, i));
                     }
                 }
+
+                document.getElementById('count-total').textContent = total;
+                document.getElementById('count-zonas').textContent = Object.keys(statsZ).length;
+                let vHtml = ""; for(let v in statsV) vHtml += `<div>• ${v}: <b>${statsV[v]}</b></div>`;
+                document.getElementById('list-vendedores').innerHTML = vHtml;
+                let zHtml = ""; for(let z in statsZ) zHtml += `<div>• ${z}: <b>${statsZ[z]}</b></div>`;
+                document.getElementById('list-zonas').innerHTML = zHtml;
             }
         });
 
         function updateSidePanel(row, index) {
             const panel = document.getElementById('side-panel');
-            const [fecha, vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes, obs, imagen] = row;
+            const [marca, vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes, obs] = row;
+            const imagen = row[15]; // Columna P
             
-            const fotoUrl = formatDriveLink(imagen);
-            const imgHtml = fotoUrl ? `<div class="img-container"><img src="${fotoUrl}" alt="Local"></div>` : `<div class="img-container">Sin Foto Disponible</div>`;
+            panel.classList.remove('update-anim');
+            void panel.offsetWidth;
+            panel.classList.add('update-anim');
 
             panel.innerHTML = `
-                ${imgHtml}
-                <h3 style="margin:0; color:var(--primary);">${negocio}</h3>
-                <p style="font-size:13px; margin:5px 0;"><b>Vendedor:</b> ${vendedor}</p>
-                <hr>
-                <p style="font-size:13px;"><b>Giro:</b> ${giro}<br><b>Unidades:</b> ${unidades || 'N/A'}</p>
-                <p style="font-size:12px; color:#666;">${obs || 'Sin observaciones'}</p>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=${ubicacion}" target="_blank" class="btn-blue">🚀 INICIAR RUTA GPS</a>
+                <div class="client-photo"><img src="${getImageUrl(imagen)}" onerror="this.src='https://via.placeholder.com/400x250?text=Error+al+cargar+foto'"></div>
+                <h3 style="color:var(--primary); margin:0;">${negocio}</h3>
+                <p style="font-size:12px; color:#666; margin-bottom:10px;">ID #${index} | Registrado por ${vendedor}</p>
+                
+                <div style="font-size:13px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div><b>Giro:</b><br>${giro}</div>
+                    <div><b>Unidades:</b><br>${unidades || 'N/A'}</div>
+                    <div><b>Contacto:</b><br>${contacto}</div>
+                    <div><b>Zona:</b><br>${zona}</div>
+                    <div><b>Interés:</b><br>${interes}</div>
+                    <div><b>Correo:</b><br>${correo || 'N/A'}</div>
+                </div>
+                <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+                <p style="font-size:13px;"><b>Competencia:</b> ${competencia}</p>
+                <p style="font-size:13px;"><b>Observaciones:</b> ${obs || 'Ninguna'}</p>
+                <p style="font-size:11px; color:#999; border-top: 1px solid #eee; padding-top:5px;">Registrado: ${marca}</p>
+                
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${ubicacion}" target="_blank" class="btn-blue-act" style="width:100%; text-align:center;">🚀 INICIAR RUTA GPS</a>
             `;
-            
-            // Efecto de parpadeo para que el jefe note el cambio
-            panel.style.background = "#e0f2fe";
-            setTimeout(() => panel.style.background = "white", 300);
         }
 
-        function openClientModal(row, index) {
-            const modal = document.getElementById('clientModal');
-            const container = document.getElementById('modal-data');
-            const [fecha, vendedor, , zona, negocio, giro, contacto, tel, correo, , competencia, unidades, interes, obs, imagen] = row;
+        function openModal(row, index) {
+            const [marca, vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes, obs] = row;
+            const imagen = row[15]; // Columna P
             
-            const fotoUrl = formatDriveLink(imagen);
-            const imgHtml = fotoUrl ? `<div class="img-container" style="height:300px;"><img src="${fotoUrl}"></div>` : `<div class="img-container">Sin Foto</div>`;
-
-            container.innerHTML = `
-                ${imgHtml}
-                <h2 style="color:var(--primary); margin-bottom:5px;">${negocio}</h2>
-                <p><b>Contacto:</b> ${contacto} (${tel})</p>
-                <p><b>Correo:</b> ${correo || 'N/A'}</p>
-                <p><b>Unidades:</b> ${unidades || 'N/A'}</p>
-                <p><b>Vendedor:</b> ${vendedor}</p>
-                <p><b>Observaciones:</b> ${obs || 'N/A'}</p>
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <a href="https://wa.me/52${tel.replace(/\D/g,'')}" target="_blank" class="btn-blue" style="flex:1; background:var(--accent);">HABLAR POR WA</a>
-                </div>
+            document.getElementById('modal-data').innerHTML = `
+                <div class="client-photo" style="height:250px;"><img src="${getImageUrl(imagen)}"></div>
+                <h2 style="color:var(--primary); margin:0;">${negocio}</h2>
+                <p style="margin:5px 0;"><b>Contacto:</b> ${contacto} (${tel})</p>
+                <p style="margin:5px 0;"><b>Giro:</b> ${giro}</p>
+                <p style="margin:5px 0;"><b>Unidades de Transporte:</b> ${unidades || 'N/A'}</p>
+                <p style="margin:5px 0;"><b>Competencia:</b> ${competencia}</p>
+                <p style="margin:5px 0;"><b>Interés:</b> ${interes}</p>
+                <p style="margin:5px 0;"><b>Observaciones:</b> ${obs || 'N/A'}</p>
+                <p style="font-size:11px; color:#999;">Vendedor: ${vendedor} | Zona: ${zona}</p>
+                <a href="https://wa.me/52${tel.replace(/\D/g,'')}" target="_blank" class="btn-blue-act" style="background:var(--accent); width:100%; text-align:center;">ENVIAR WHATSAPP</a>
             `;
-            modal.style.display = "block";
+            document.getElementById('clientModal').style.display = "block";
         }
     </script>
 </body>
