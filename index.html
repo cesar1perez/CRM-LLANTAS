@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Llanterama Tulancingo - Prospectos</title>
+    <title>Llanterama Tulancingo - Gestión de Prospectos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -12,16 +12,15 @@
             --primary: #004a99;
             --secondary: #00b4d8;
             --accent: #25D366;
-            --bg: #f8f9fa;
+            --bg: #f4f7f9;
             --white: #ffffff;
             --text: #333333;
         }
 
         * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+        body { margin: 0; background-color: var(--bg); color: var(--text); }
 
-        body { margin: 0; background-color: var(--bg); color: var(--text); overflow-x: hidden; }
-
-        /* --- 1. TÍTULO DINÁMICO --- */
+        /* 1. Título Dinámico */
         .dynamic-title {
             font-size: 32px;
             font-weight: 900;
@@ -31,13 +30,9 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: shine 3s linear infinite;
-            margin: 10px 0;
-            letter-spacing: -1px;
+            margin: 5px 0;
         }
-
-        @keyframes shine {
-            to { background-position: 200% center; }
-        }
+        @keyframes shine { to { background-position: 200% center; } }
 
         nav {
             background: var(--white);
@@ -45,165 +40,143 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid var(--primary);
+            border-bottom: 3px solid var(--primary);
             position: sticky;
             top: 0;
             z-index: 1000;
         }
 
-        /* --- 5. BOTÓN ATRÁS --- */
         .btn-back {
-            background: #eee;
+            background: #e2e8f0;
             border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
+            padding: 10px 20px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
             color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 5px;
             margin-bottom: 15px;
         }
-
-        .btn-back:hover { background: #ddd; }
 
         .container { width: 95%; max-width: 1300px; margin: 20px auto; }
         .view-section { display: none; }
         .view-section.active { display: block; }
 
-        /* --- 2. BOTONES DE INICIO ATRACTIVOS --- */
-        .home-hero {
-            text-align: center;
-            padding: 40px 20px;
-            background: var(--white);
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        /* 3. Inicio Dinámico con Estadísticas */
+        .home-hero { text-align: center; padding: 30px; background: var(--white); border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
             margin-bottom: 30px;
         }
-
-        .action-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-        }
-
-        .action-card {
+        .stat-card {
             background: var(--white);
+            padding: 20px;
             border-radius: 15px;
-            padding: 30px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .stat-card h4 { margin: 0; font-size: 12px; color: #666; text-transform: uppercase; }
+        .stat-card div { font-size: 24px; font-weight: bold; color: var(--primary); margin: 5px 0; }
+        .stat-list { font-size: 13px; text-align: left; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+
+        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .action-btn {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 20px;
             text-align: center;
+            text-decoration: none;
+            color: var(--text);
             border: 2px solid #eee;
             transition: 0.3s;
         }
+        .action-btn:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .btn-blue { background: var(--primary); color: white; padding: 12px 25px; border-radius: 50px; display: inline-block; margin-top: 15px; font-weight: bold; }
 
-        .btn-main {
-            display: inline-block;
-            background: var(--primary);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 20px;
-            box-shadow: 0 4px 15px rgba(0,74,153,0.3);
-            transition: 0.3s;
-        }
-
-        .btn-main:hover { transform: scale(1.05); background: var(--secondary); }
-
-        /* --- 4. LISTADO CON CORREO Y HORA --- */
-        .table-container {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            overflow-x: auto;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
+        /* 2. Listado de Clientes */
+        .table-container { background: white; padding: 20px; border-radius: 15px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #f8f9fa; color: var(--primary); padding: 12px; border-bottom: 2px solid var(--primary); text-align: left; }
+        th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; border-bottom: 2px solid var(--primary); }
         td { padding: 12px; border-bottom: 1px solid #eee; }
+        .btn-whatsapp { background: var(--accent); color: white; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 11px; display: inline-block; }
 
-        /* --- 3. MAPA CON VENTANA AUXILIAR --- */
-        .map-layout {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 20px;
-            height: 70vh;
+        /* 1. Mapa con Efecto Refresh */
+        .map-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; height: 75vh; }
+        #map { border-radius: 15px; border: 1px solid #ccc; }
+        .info-panel { background: white; border-radius: 15px; padding: 20px; border: 1px solid #ccc; overflow-y: auto; position: relative; }
+        
+        /* Animación de actualización */
+        @keyframes flashUpdate {
+            0% { background-color: var(--white); }
+            50% { background-color: #e0f2fe; }
+            100% { background-color: var(--white); }
         }
+        .update-anim { animation: flashUpdate 0.5s ease; }
 
-        #map { width: 100%; height: 100%; border-radius: 15px; border: 1px solid #ccc; }
-
-        .info-panel {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            border: 1px solid #ccc;
-            overflow-y: auto;
+        .refresh-icon {
+            display: none;
+            position: absolute;
+            top: 10px; right: 10px;
+            font-size: 20px;
+            animation: rotate 1s linear infinite;
         }
-
-        .info-panel h3 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
-        .info-item { margin-bottom: 12px; font-size: 14px; }
-        .info-item b { color: #555; display: block; font-size: 11px; text-transform: uppercase; }
-
-        .btn-go-gps {
-            display: block;
-            background: var(--primary);
-            color: white;
-            text-align: center;
-            padding: 12px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-
-        .btn-wa-sm { background: var(--accent); color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 11px; }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         @media (max-width: 900px) {
             .map-layout { grid-template-columns: 1fr; height: auto; }
             #map { height: 400px; }
-            .dynamic-title { font-size: 24px; }
         }
     </style>
 </head>
 <body>
 
     <nav>
-        <div class="dynamic-title" id="main-nav-title">Llanterama Tulancingo</div>
-        <div style="font-size: 12px; color: #666; font-weight: bold;">M.A. Hernández | 2026</div>
+        <div class="dynamic-title">Llanterama Tulancingo</div>
+        <div style="font-size: 12px; color: #666; font-weight: bold;">PANEL DE CONTROL 2026</div>
     </nav>
 
     <div class="container">
         
         <div id="home" class="view-section active">
             <div class="home-hero">
-                <div class="dynamic-title" style="font-size: 48px;">Prospectos en Llantas</div>
-                <p style="color: #666; font-size: 18px;">Sistema de Inteligencia Comercial para Movilidad (Taxis y Colectivas)</p>
+                <div class="dynamic-title" style="font-size: 45px;">Prospectos en Llantas</div>
+            </div>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h4>Total Prospectos</h4>
+                    <div id="count-total">0</div>
+                    <div class="stat-list" id="list-vendedores">Cargando vendedores...</div>
+                </div>
+                <div class="stat-card" style="border-left-color: var(--secondary);">
+                    <h4>Cobertura por Zona</h4>
+                    <div id="count-zonas">0</div>
+                    <div class="stat-list" id="list-zonas">Cargando zonas...</div>
+                </div>
             </div>
 
             <div class="action-grid">
-                <div class="action-card">
-                    <div style="font-size: 50px;">📋</div>
-                    <h3>Base de Datos</h3>
-                    <p>Consulta el listado completo, correos y estatus de interés.</p>
-                    <a href="#" class="btn-main" onclick="showView('lista')">VER LISTADO COMPLETO</a>
-                </div>
-                <div class="action-card">
-                    <div style="font-size: 50px;">📍</div>
+                <a href="#" class="action-btn" onclick="showView('lista')">
+                    <div style="font-size: 40px;">📋</div>
+                    <h3>Listado de Prospectos</h3>
+                    <p>Historial cronológico y datos de contacto.</p>
+                    <div class="btn-blue">VER LISTADO</div>
+                </a>
+                <a href="#" class="action-btn" onclick="showView('mapa-view')">
+                    <div style="font-size: 40px;">📍</div>
                     <h3>Mapa Logístico</h3>
-                    <p>Visualiza tus puntos de venta y genera rutas GPS en tiempo real.</p>
-                    <a href="#" class="btn-main" onclick="showView('mapa-view')" style="background:var(--secondary)">ABRIR MAPA DE RUTA</a>
-                </div>
+                    <p>Ubicaciones GPS y rutas de navegación.</p>
+                    <div class="btn-blue" style="background:var(--secondary)">ABRIR MAPA</div>
+                </a>
             </div>
         </div>
 
         <div id="lista" class="view-section">
             <button class="btn-back" onclick="showView('home')">← VOLVER AL INICIO</button>
             <div class="table-container">
-                <h2 style="color:var(--primary)">Listado Cronológico de Clientes</h2>
+                <h2 style="color:var(--primary); margin-top:0;">Base de Datos de Prospectos</h2>
                 <table>
                     <thead>
                         <tr>
@@ -213,15 +186,12 @@
                             <th>Negocio / Razón Social</th>
                             <th>Giro</th>
                             <th>Contacto</th>
-                            <th>Teléfono</th>
                             <th>Correo</th>
                             <th>Unidades</th>
-                            <th>Competencia</th>
-                            <th>Acción</th>
+                            <th>WhatsApp</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody">
-                        </tbody>
+                    <tbody id="tableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -231,20 +201,19 @@
             <div class="map-layout">
                 <div id="map"></div>
                 <div class="info-panel" id="side-panel">
-                    <div style="text-align:center; padding-top: 50px; color: #999;">
+                    <div class="refresh-icon" id="sync-icon">🔄</div>
+                    <div id="panel-content" style="text-align:center; padding-top: 50px; color: #999;">
                         <div style="font-size: 40px;">📍</div>
-                        <p>Selecciona un marcador en el mapa para ver la información del prospecto.</p>
+                        <p>Selecciona un punto en el mapa para ver los detalles.</p>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-VTTO816SWHrV1zM7ipVS6PNKoI8QBrBmvVTeR7xij0HvXvhrxDGOP1QH-t9MVe7IhFvlfkLUddhN/pub?output=csv';
         let map;
-        let prospectosData = [];
 
         function showView(id) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
@@ -252,7 +221,6 @@
             if(id === 'mapa-view') setTimeout(() => map.invalidateSize(), 200);
         }
 
-        // Mapa Claro
         map = L.map('map').setView([20.0842, -98.3672], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -260,75 +228,99 @@
             download: true,
             header: false,
             complete: function(results) {
-                prospectosData = results.data;
+                const data = results.data;
                 const body = document.getElementById('tableBody');
                 body.innerHTML = '';
 
-                for (let i = 1; i < prospectosData.length; i++) {
-                    const row = prospectosData[i];
-                    if(!row[4]) continue; 
+                let statsVendedores = {};
+                let statsZonas = {};
+                let total = 0;
 
-                    // Desglose de columnas
-                    const fullFecha = row[0] || ""; // Marca temporal
-                    const fechaArr = fullFecha.split(' ');
-                    const fecha = fechaArr[0] || "-";
-                    const hora = fechaArr[1] || "-";
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    if(!row[4]) continue;
+                    total++;
+
+                    const [marca, vendedor, dia, zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades] = row;
+                    const fechaArr = marca.split(' ');
                     
-                    const [ , vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes] = row;
-                    const valUnidades = (unidades && unidades !== "0") ? unidades : "N/A";
+                    // Contabilizar para Inicio
+                    statsVendedores[vendedor] = (statsVendedores[vendedor] || 0) + 1;
+                    statsZonas[zona] = (statsZonas[zona] || 0) + 1;
 
-                    // Fila de Tabla
+                    // Tabla
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><b>${i}</b></td>
-                        <td>${fecha}</td>
-                        <td style="color:#666">${hora}</td>
+                        <td>${i}</td>
+                        <td>${fechaArr[0]}</td>
+                        <td>${fechaArr[1]}</td>
                         <td><strong>${negocio}</strong></td>
                         <td>${giro}</td>
                         <td>${contacto}</td>
-                        <td>${tel}</td>
-                        <td style="font-size:11px">${correo || 'N/A'}</td>
-                        <td>${valUnidades}</td>
-                        <td title="${competencia}">${competencia.substring(0,15)}...</td>
-                        <td><a href="https://wa.me/52${tel.replace(/\D/g,'')}" class="btn-wa-sm" target="_blank">WA</a></td>
+                        <td>${correo || 'N/A'}</td>
+                        <td>${unidades || 'N/A'}</td>
+                        <td><a href="https://wa.me/52${tel.replace(/\D/g,'')}" class="btn-whatsapp" target="_blank">WHATSAPP</a></td>
                     `;
                     body.appendChild(tr);
 
-                    // Marcadores en Mapa
                     if(ubicacion && ubicacion.includes(',')) {
                         const coords = ubicacion.split(',');
                         const marker = L.marker([parseFloat(coords[0]), parseFloat(coords[1])]).addTo(map);
-                        
-                        marker.on('click', () => {
-                            updateSidePanel(row, i, fecha, hora);
-                        });
+                        marker.on('click', () => updateSidePanel(row, i, fechaArr[0], fechaArr[1]));
                     }
                 }
+
+                // 3. Actualizar Inicio con Prospectos por Vendedor y Zona
+                document.getElementById('count-total').textContent = total;
+                document.getElementById('count-zonas').textContent = Object.keys(statsZonas).length;
+                
+                let vHtml = "";
+                for(let v in statsVendedores) vHtml += `<div>• ${v}: <b>${statsVendedores[v]}</b></div>`;
+                document.getElementById('list-vendedores').innerHTML = vHtml;
+
+                let zHtml = "";
+                for(let z in statsZonas) zHtml += `<div>• ${z}: <b>${statsZonas[z]}</b></div>`;
+                document.getElementById('list-zonas').innerHTML = zHtml;
             }
         });
 
-        // --- 3. VENTANA AUXILIAR (SIDE PANEL) ---
         function updateSidePanel(row, index, fecha, hora) {
             const panel = document.getElementById('side-panel');
+            const icon = document.getElementById('sync-icon');
+            const content = document.getElementById('panel-content');
             const [ , vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes, obs] = row;
             const coords = ubicacion.split(',');
 
-            panel.innerHTML = `
-                <h3>Detalle del Prospecto</h3>
-                <div class="info-item"><b># Registro</b> ${index}</div>
-                <div class="info-item"><b>Negocio</b> <span style="font-size:18px; color:var(--primary); font-weight:bold;">${negocio}</span></div>
-                <div class="info-item"><b>Giro</b> ${giro}</div>
-                <div class="info-item"><b>Contacto</b> ${contacto}</div>
-                <div class="info-item"><b>WhatsApp</b> <a href="https://wa.me/52${tel.replace(/\D/g,'')}" target="_blank">${tel}</a></div>
-                <div class="info-item"><b>Correo</b> ${correo || 'N/A'}</div>
-                <div class="info-item"><b>Unidades</b> ${unidades || 'N/A'}</div>
-                <div class="info-item"><b>Competencia</b> ${competencia}</div>
-                <div class="info-item"><b>Interés</b> <span style="color:${interes.toLowerCase().includes('alto')?'green':'orange'}; font-weight:bold;">${interes}</span></div>
-                <div class="info-item"><b>Observaciones</b> ${obs || 'Sin observaciones'}</div>
-                <div class="info-item"><b>Registrado el</b> ${fecha} a las ${hora}</div>
+            // 1. Efecto Visual de "Refresh"
+            icon.style.display = "block";
+            panel.classList.remove('update-anim');
+            void panel.offsetWidth; // Trigger reflow
+            panel.classList.add('update-anim');
+
+            setTimeout(() => { icon.style.display = "none"; }, 600);
+
+            content.innerHTML = `
+                <h3 style="color:var(--primary); margin-top:0;">Información del Prospecto</h3>
+                <div style="margin-bottom:15px; padding:10px; background:#f8fafc; border-radius:10px; border:1px solid #eee;">
+                    <small style="color:#666; font-weight:bold;">NEGOCIO / RAZÓN SOCIAL</small>
+                    <div style="font-size:20px; font-weight:bold; color:var(--primary);">${negocio}</div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:13px;">
+                    <p><b>Giro:</b><br>${giro}</p>
+                    <p><b>Unidades:</b><br>${unidades || 'N/A'}</p>
+                    <p><b>Contacto:</b><br>${contacto}</p>
+                    <p><b>Zona:</b><br>${zona}</p>
+                </div>
+                <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+                <p style="font-size:13px;"><b>Competencia:</b> ${competencia}</p>
+                <p style="font-size:13px;"><b>Obs:</b> ${obs || 'Ninguna'}</p>
+                <p style="font-size:11px; color:#999;">Registrado por ${vendedor} el ${fecha} a las ${hora}</p>
                 
                 <a href="https://www.google.com/maps/dir/?api=1&destination=${coords[0]},${coords[1]}" 
-                   target="_blank" class="btn-go-gps">🚀 INICIAR RUTA EN GOOGLE MAPS</a>
+                   target="_blank" 
+                   style="display:block; background:var(--primary); color:white; text-align:center; padding:15px; border-radius:10px; text-decoration:none; font-weight:bold; margin-top:20px;">
+                   🚀 INICIAR RUTA GPS
+                </a>
             `;
         }
     </script>
