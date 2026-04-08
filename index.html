@@ -3,191 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prospectos en Llantas - Llanterama Tulancingo</title>
+    <title>Llanterama Tulancingo - Prospectos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        /* 5. Estilo de letra Arial y ordenado */
         :root {
-            --primary-blue: #004a99;
-            --light-bg: #f4f7f9;
+            --primary: #004a99;
+            --secondary: #00b4d8;
+            --accent: #25D366;
+            --bg: #f8f9fa;
             --white: #ffffff;
-            --text-main: #333333;
-            --border-color: #d1d9e0;
+            --text: #333333;
         }
 
         * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
 
-        body {
-            margin: 0;
-            background-color: var(--light-bg);
-            color: var(--text-main);
-            line-height: 1.6;
+        body { margin: 0; background-color: var(--bg); color: var(--text); overflow-x: hidden; }
+
+        /* --- 1. TÍTULO DINÁMICO --- */
+        .dynamic-title {
+            font-size: 32px;
+            font-weight: 900;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+            margin: 10px 0;
+            letter-spacing: -1px;
         }
 
-        /* 2. Título Actualizado y Navegación */
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
         nav {
-            background-color: var(--primary-blue);
-            color: white;
-            padding: 15px 5%;
+            background: var(--white);
+            padding: 10px 5%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-bottom: 2px solid var(--primary);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        .nav-title { font-size: 18px; font-weight: bold; text-transform: uppercase; }
-
-        .nav-links button {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid white;
-            color: white;
+        /* --- 5. BOTÓN ATRÁS --- */
+        .btn-back {
+            background: #eee;
+            border: none;
             padding: 8px 15px;
-            margin-left: 8px;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 13px;
             font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 15px;
         }
 
-        .nav-links button:hover { background: white; color: var(--primary-blue); }
+        .btn-back:hover { background: #ddd; }
 
-        .container { width: 95%; max-width: 1200px; margin: 20px auto; }
+        .container { width: 95%; max-width: 1300px; margin: 20px auto; }
         .view-section { display: none; }
-        .view-section.active { display: block; animation: fadeIn 0.3s; }
+        .view-section.active { display: block; }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* 4. Pantalla de Inicio Mejorada */
-        .home-header {
-            background: linear-gradient(rgba(0,74,153,0.8), rgba(0,74,153,0.8)), url('https://www.tires-easy.com/blog/wp-content/uploads/2018/09/tire-shop.jpg');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 60px 20px;
+        /* --- 2. BOTONES DE INICIO ATRACTIVOS --- */
+        .home-hero {
             text-align: center;
-            border-radius: 15px;
+            padding: 40px 20px;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        .home-header h1 { margin: 0; font-size: 28px; }
-        .home-header p { font-size: 16px; opacity: 0.9; }
-
-        .dashboard-grid {
+        .action-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
         }
 
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
+        .action-card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 30px;
             text-align: center;
+            border: 2px solid #eee;
             transition: 0.3s;
-            cursor: pointer;
         }
 
-        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .card h2 { font-size: 32px; color: var(--primary-blue); margin: 10px 0; }
-        .card span { font-size: 14px; color: #666; font-weight: bold; text-transform: uppercase; }
+        .btn-main {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0,74,153,0.3);
+            transition: 0.3s;
+        }
 
-        /* 3. Listado de Prospectos Ordenado */
+        .btn-main:hover { transform: scale(1.05); background: var(--secondary); }
+
+        /* --- 4. LISTADO CON CORREO Y HORA --- */
         .table-container {
             background: white;
             padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 15px;
             overflow-x: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #f8f9fa; color: var(--primary-blue); padding: 12px; text-align: left; border-bottom: 2px solid var(--primary-blue); }
+        th { background: #f8f9fa; color: var(--primary); padding: 12px; border-bottom: 2px solid var(--primary); text-align: left; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
-        tr:nth-child(even) { background: #fafafa; }
 
-        /* 6. Mapa con calles visibles (Estilo claro) */
-        #map { height: 65vh; width: 100%; border-radius: 15px; border: 1px solid var(--border-color); }
+        /* --- 3. MAPA CON VENTANA AUXILIAR --- */
+        .map-layout {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            height: 70vh;
+        }
 
-        .btn-wa { background: #25D366; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 11px; font-weight: bold; }
-        .btn-go { background: var(--primary-blue); color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 11px; display: inline-block; margin-top: 10px; }
+        #map { width: 100%; height: 100%; border-radius: 15px; border: 1px solid #ccc; }
 
-        /* Responsive */
-        @media (max-width: 600px) {
-            .nav-title { font-size: 14px; }
-            .home-header h1 { font-size: 22px; }
+        .info-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            overflow-y: auto;
+        }
+
+        .info-panel h3 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
+        .info-item { margin-bottom: 12px; font-size: 14px; }
+        .info-item b { color: #555; display: block; font-size: 11px; text-transform: uppercase; }
+
+        .btn-go-gps {
+            display: block;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .btn-wa-sm { background: var(--accent); color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 11px; }
+
+        @media (max-width: 900px) {
+            .map-layout { grid-template-columns: 1fr; height: auto; }
+            #map { height: 400px; }
+            .dynamic-title { font-size: 24px; }
         }
     </style>
 </head>
 <body>
 
     <nav>
-        <div class="nav-title">Llanterama Tulancingo</div>
-        <div class="nav-links">
-            <button onclick="showView('home')">Inicio</button>
-            <button onclick="showView('lista')">Listado de Prospectos</button>
-            <button onclick="showView('mapa-view')">Mapa Geográfico</button>
-        </div>
+        <div class="dynamic-title" id="main-nav-title">Llanterama Tulancingo</div>
+        <div style="font-size: 12px; color: #666; font-weight: bold;">M.A. Hernández | 2026</div>
     </nav>
 
     <div class="container">
         
         <div id="home" class="view-section active">
-            <div class="home-header">
-                <h1>Control de Prospectos en Llantas</h1>
-                <p>Gestión comercial | Tulancingo, Hgo.</p>
+            <div class="home-hero">
+                <div class="dynamic-title" style="font-size: 48px;">Prospectos en Llantas</div>
+                <p style="color: #666; font-size: 18px;">Sistema de Inteligencia Comercial para Movilidad (Taxis y Colectivas)</p>
             </div>
 
-            <div class="dashboard-grid">
-                <div class="card" onclick="showView('lista')">
-                    <span>Total Prospectos</span>
-                    <h2 id="total-p">0</h2>
-                    <p style="color:var(--primary-blue)">Ver listado completo →</p>
+            <div class="action-grid">
+                <div class="action-card">
+                    <div style="font-size: 50px;">📋</div>
+                    <h3>Base de Datos</h3>
+                    <p>Consulta el listado completo, correos y estatus de interés.</p>
+                    <a href="#" class="btn-main" onclick="showView('lista')">VER LISTADO COMPLETO</a>
                 </div>
-                <div class="card">
-                    <span>Zona de Cobertura</span>
-                    <h2>Tulancingo</h2>
-                    <p id="main-vendedor">Marco A. Hernández</p>
-                </div>
-                <div class="card" onclick="showView('mapa-view')">
-                    <span>Clientes Ubicados</span>
-                    <h2 id="total-m">0</h2>
-                    <p style="color:var(--primary-blue)">Abrir mapa de ruta →</p>
+                <div class="action-card">
+                    <div style="font-size: 50px;">📍</div>
+                    <h3>Mapa Logístico</h3>
+                    <p>Visualiza tus puntos de venta y genera rutas GPS en tiempo real.</p>
+                    <a href="#" class="btn-main" onclick="showView('mapa-view')" style="background:var(--secondary)">ABRIR MAPA DE RUTA</a>
                 </div>
             </div>
         </div>
 
         <div id="lista" class="view-section">
+            <button class="btn-back" onclick="showView('home')">← VOLVER AL INICIO</button>
             <div class="table-container">
-                <h3 style="color:var(--primary-blue)">Listado de Prospectos (Orden Cronológico)</h3>
+                <h2 style="color:var(--primary)">Listado Cronológico de Clientes</h2>
                 <table>
                     <thead>
                         <tr>
                             <th>#</th>
                             <th>Fecha</th>
+                            <th>Hora</th>
                             <th>Negocio / Razón Social</th>
                             <th>Giro</th>
                             <th>Contacto</th>
                             <th>Teléfono</th>
-                            <th>Unidades de Transporte</th>
+                            <th>Correo</th>
+                            <th>Unidades</th>
                             <th>Competencia</th>
-                            <th>Interés</th>
                             <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <tr><td colspan="10" style="text-align:center">Cargando datos...</td></tr>
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </div>
 
         <div id="mapa-view" class="view-section">
-            <h3 style="color:var(--primary-blue)">Geolocalización de Prospectos</h3>
-            <div id="map"></div>
+            <button class="btn-back" onclick="showView('home')">← VOLVER AL INICIO</button>
+            <div class="map-layout">
+                <div id="map"></div>
+                <div class="info-panel" id="side-panel">
+                    <div style="text-align:center; padding-top: 50px; color: #999;">
+                        <div style="font-size: 40px;">📍</div>
+                        <p>Selecciona un marcador en el mapa para ver la información del prospecto.</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -195,6 +244,7 @@
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-VTTO816SWHrV1zM7ipVS6PNKoI8QBrBmvVTeR7xij0HvXvhrxDGOP1QH-t9MVe7IhFvlfkLUddhN/pub?output=csv';
         let map;
+        let prospectosData = [];
 
         function showView(id) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
@@ -202,78 +252,85 @@
             if(id === 'mapa-view') setTimeout(() => map.invalidateSize(), 200);
         }
 
-        // 6. Mapa Claro con calles visibles
+        // Mapa Claro
         map = L.map('map').setView([20.0842, -98.3672], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         Papa.parse(csvUrl, {
             download: true,
             header: false,
             complete: function(results) {
-                const data = results.data;
+                prospectosData = results.data;
                 const body = document.getElementById('tableBody');
                 body.innerHTML = '';
 
-                let countTotal = 0;
-                let countMap = 0;
-
-                // 3. Ordenar cronológicamente (Suponiendo que la fila 1 es la más antigua y la última es la más nueva)
-                // Usamos un bucle inverso si queremos ver lo más nuevo arriba, o normal para orden de registro.
-                // Aquí lo pongo en orden de llegada (1, 2, 3...)
-                for (let i = 1; i < data.length; i++) {
-                    const row = data[i];
+                for (let i = 1; i < prospectosData.length; i++) {
+                    const row = prospectosData[i];
                     if(!row[4]) continue; 
 
-                    const [fecha, vendedor, dia, zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes] = row;
+                    // Desglose de columnas
+                    const fullFecha = row[0] || ""; // Marca temporal
+                    const fechaArr = fullFecha.split(' ');
+                    const fecha = fechaArr[0] || "-";
+                    const hora = fechaArr[1] || "-";
+                    
+                    const [ , vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes] = row;
+                    const valUnidades = (unidades && unidades !== "0") ? unidades : "N/A";
 
-                    countTotal++;
-
-                    // 4. Unidades de transporte N/A
-                    const valUnidades = (unidades && unidades.trim() !== "" && unidades !== "0") ? unidades : "N/A";
-
-                    // Tabla
+                    // Fila de Tabla
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><b>${countTotal}</b></td>
-                        <td>${fecha.split(' ')[0]}</td>
+                        <td><b>${i}</b></td>
+                        <td>${fecha}</td>
+                        <td style="color:#666">${hora}</td>
                         <td><strong>${negocio}</strong></td>
                         <td>${giro}</td>
                         <td>${contacto}</td>
                         <td>${tel}</td>
+                        <td style="font-size:11px">${correo || 'N/A'}</td>
                         <td>${valUnidades}</td>
-                        <td>${competencia}</td>
-                        <td><span style="font-weight:bold; color:${interes.toLowerCase().includes('alto')?'#28a745':'#f39c12'}">${interes}</span></td>
-                        <td><a href="https://wa.me/52${tel.replace(/\D/g,'')}" class="btn-wa" target="_blank">WhatsApp</a></td>
+                        <td title="${competencia}">${competencia.substring(0,15)}...</td>
+                        <td><a href="https://wa.me/52${tel.replace(/\D/g,'')}" class="btn-wa-sm" target="_blank">WA</a></td>
                     `;
                     body.appendChild(tr);
 
-                    // Mapa
+                    // Marcadores en Mapa
                     if(ubicacion && ubicacion.includes(',')) {
                         const coords = ubicacion.split(',');
-                        const lat = parseFloat(coords[0]);
-                        const lng = parseFloat(coords[1]);
-                        if(!isNaN(lat)) {
-                            countMap++;
-                            // 2. Link de Google Maps para ruta
-                            const gmapsRoute = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-                            L.marker([lat, lng]).addTo(map)
-                                .bindPopup(`
-                                    <div style="font-family:Arial; font-size:12px;">
-                                        <b>${negocio}</b><br>
-                                        Giro: ${giro}<br>
-                                        <a href="${gmapsRoute}" target="_blank" class="btn-go">INICIAR RUTA GPS</a>
-                                    </div>
-                                `);
-                        }
+                        const marker = L.marker([parseFloat(coords[0]), parseFloat(coords[1])]).addTo(map);
+                        
+                        marker.on('click', () => {
+                            updateSidePanel(row, i, fecha, hora);
+                        });
                     }
                 }
-
-                document.getElementById('total-p').textContent = countTotal;
-                document.getElementById('total-m').textContent = countMap;
             }
         });
+
+        // --- 3. VENTANA AUXILIAR (SIDE PANEL) ---
+        function updateSidePanel(row, index, fecha, hora) {
+            const panel = document.getElementById('side-panel');
+            const [ , vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes, obs] = row;
+            const coords = ubicacion.split(',');
+
+            panel.innerHTML = `
+                <h3>Detalle del Prospecto</h3>
+                <div class="info-item"><b># Registro</b> ${index}</div>
+                <div class="info-item"><b>Negocio</b> <span style="font-size:18px; color:var(--primary); font-weight:bold;">${negocio}</span></div>
+                <div class="info-item"><b>Giro</b> ${giro}</div>
+                <div class="info-item"><b>Contacto</b> ${contacto}</div>
+                <div class="info-item"><b>WhatsApp</b> <a href="https://wa.me/52${tel.replace(/\D/g,'')}" target="_blank">${tel}</a></div>
+                <div class="info-item"><b>Correo</b> ${correo || 'N/A'}</div>
+                <div class="info-item"><b>Unidades</b> ${unidades || 'N/A'}</div>
+                <div class="info-item"><b>Competencia</b> ${competencia}</div>
+                <div class="info-item"><b>Interés</b> <span style="color:${interes.toLowerCase().includes('alto')?'green':'orange'}; font-weight:bold;">${interes}</span></div>
+                <div class="info-item"><b>Observaciones</b> ${obs || 'Sin observaciones'}</div>
+                <div class="info-item"><b>Registrado el</b> ${fecha} a las ${hora}</div>
+                
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${coords[0]},${coords[1]}" 
+                   target="_blank" class="btn-go-gps">🚀 INICIAR RUTA EN GOOGLE MAPS</a>
+            `;
+        }
     </script>
 </body>
 </html>
