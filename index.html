@@ -74,12 +74,14 @@
         #map { border-radius: 15px; border: 1px solid #ccc; }
         .info-panel { background: white; border-radius: 15px; padding: 20px; border: 1px solid #ccc; overflow-y: auto; position: relative; }
         
-        .client-photo {
-            width: 100%; height: 220px; background: #eee; border-radius: 10px; 
+        /* Contenedor de Medios (Imagen o Iframe) */
+        .client-media {
+            width: 100%; height: 230px; background: #eee; border-radius: 10px; 
             margin-bottom: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center;
             border: 1px solid #ddd;
         }
-        .client-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .client-media img { width: 100%; height: 100%; object-fit: cover; }
+        .client-media iframe { width: 100% !important; height: 100% !important; border: 0; }
 
         @keyframes flashUpdate {
             0% { background-color: var(--white); }
@@ -112,12 +114,12 @@
                 <div class="stat-card">
                     <h4>Total Prospectos Realizados</h4>
                     <div id="count-total">0</div>
-                    <div class="stat-list" id="list-vendedores">Cargando vendedores...</div>
+                    <div class="stat-list" id="list-vendedores">Cargando...</div>
                 </div>
                 <div class="stat-card" style="border-left-color: var(--secondary);">
                     <h4>Prospectos por Zona</h4>
                     <div id="count-zonas">0</div>
-                    <div class="stat-list" id="list-zonas">Cargando zonas...</div>
+                    <div class="stat-list" id="list-zonas">Cargando...</div>
                 </div>
             </div>
 
@@ -125,7 +127,7 @@
                 <a href="#" class="action-btn" onclick="showView('lista')">
                     <div style="font-size: 40px;">📋</div>
                     <h3>Listado de Prospectos</h3>
-                    <p>Historial con fotografías y datos completos.</p>
+                    <p>Ver base de datos y evidencia visual.</p>
                     <div class="btn-blue-act">VER LISTADO</div>
                 </a>
                 <a href="#" class="action-btn" onclick="showView('mapa-view')">
@@ -138,7 +140,7 @@
         </div>
 
         <div id="lista" class="view-section">
-            <button class="btn-back" onclick="showView('home')">← VOLVER AL INICIO</button>
+            <button class="btn-back" onclick="showView('home')">← VOLVER</button>
             <div class="table-container">
                 <h2 style="color:var(--primary); margin:0 0 10px 0;">Base de Datos de Prospectos</h2>
                 <table>
@@ -159,7 +161,7 @@
         </div>
 
         <div id="mapa-view" class="view-section">
-            <button class="btn-back" onclick="showView('home')">← VOLVER AL INICIO</button>
+            <button class="btn-back" onclick="showView('home')">← VOLVER</button>
             <div class="map-layout">
                 <div id="map"></div>
                 <div class="info-panel" id="side-panel">
@@ -191,31 +193,29 @@
 
         function closeModal() { document.getElementById('clientModal').style.display = "none"; }
 
-        // --- FUNCIÓN DE IMAGEN MEJORADA (TODOTERRENO) ---
-        function getImageUrl(input) {
-            if (!input || input.trim().length < 10) return 'https://via.placeholder.com/400x250?text=Sin+Foto+Disponible';
+        // --- FUNCIÓN MAESTRA DE MEDIOS (MANEJA IFRAMES Y LINKS) ---
+        function getMediaHTML(input) {
+            if (!input || input.trim().length < 10) return `<div class="client-media">Sin Foto Disponible</div>`;
             
-            let url = input.trim();
-            
-            // Si pegaron el código de "incorporar" completo, extraemos solo el link
-            if (url.includes('<iframe')) {
-                const match = url.match(/src="([^"]+)"/);
-                if (match) url = match[1];
+            let content = input.trim();
+
+            // CASO 1: Es un IFRAME completo (el código que me pasaste)
+            if (content.includes('<iframe')) {
+                // Limpiamos el código para que sea responsivo
+                let cleanIframe = content.replace(/width="[0-9]+"/, 'width="100%"');
+                cleanIframe = cleanIframe.replace(/height="[0-9]+"/, 'height="100%"');
+                return `<div class="client-media">${cleanIframe}</div>`;
             }
 
-            // Si es un link de Google Drive (cualquier variante)
-            if (url.includes('drive.google.com')) {
-                let id = "";
-                if (url.includes('/d/')) {
-                    id = url.split('/d/')[1].split('/')[0].split('?')[0];
-                } else if (url.includes('id=')) {
-                    id = url.split('id=')[1].split('&')[0];
-                }
-                // Esta URL fuerza a Google a servir la imagen como miniatura directa
-                return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+            // CASO 2: Es un link de Google Drive
+            if (content.includes('drive.google.com')) {
+                const id = content.includes('/d/') ? content.split('/d/')[1].split('/')[0] : content.split('id=')[1].split('&')[0];
+                const thumb = `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+                return `<div class="client-media"><img src="${thumb}" onerror="this.src='https://via.placeholder.com/400x250?text=Error+en+Link+Drive'"></div>`;
             }
-            
-            return url;
+
+            // CASO 3: Es un link directo a imagen
+            return `<div class="client-media"><img src="${content}" onerror="this.src='https://via.placeholder.com/400x250?text=Link+No+Valido'"></div>`;
         }
 
         map = L.map('map').setView([20.0842, -98.3672], 14);
@@ -237,8 +237,7 @@
                     total++;
 
                     const [marca, vendedor, dia, zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes] = row;
-                    const imagen = row[15]; // Columna P
-
+                    
                     statsV[vendedor] = (statsV[vendedor] || 0) + 1;
                     statsZ[zona] = (statsZ[zona] || 0) + 1;
 
@@ -256,8 +255,8 @@
                     tr.onclick = (e) => { if(e.target.tagName !== 'A') openModal(row, i); };
                     body.appendChild(tr);
 
-                    if(ubicacion && ubicacion.includes(',')) {
-                        const marker = L.marker([parseFloat(ubicacion.split(',')[0]), parseFloat(ubicacion.split(',')[1])]).addTo(map);
+                    if(row[9] && row[9].includes(',')) {
+                        const marker = L.marker([parseFloat(row[9].split(',')[0]), parseFloat(row[9].split(',')[1])]).addTo(map);
                         marker.on('click', () => updateSidePanel(row, i));
                     }
                 }
@@ -274,14 +273,14 @@
         function updateSidePanel(row, index) {
             const panel = document.getElementById('side-panel');
             const [marca, vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes, obs] = row;
-            const imagen = row[15]; 
+            const imagenRaw = row[15]; // Columna P
             
             panel.classList.remove('update-anim');
             void panel.offsetWidth;
             panel.classList.add('update-anim');
 
             panel.innerHTML = `
-                <div class="client-photo"><img src="${getImageUrl(imagen)}" onerror="this.src='https://via.placeholder.com/400x250?text=Error+de+Acceso+a+Foto'"></div>
+                ${getMediaHTML(imagenRaw)}
                 <h3 style="color:var(--primary); margin:0;">${negocio}</h3>
                 <p style="font-size:12px; color:#666; margin-bottom:10px;">ID #${index} | Registrado por ${vendedor}</p>
                 
@@ -297,24 +296,23 @@
                 <p style="font-size:13px;"><b>Competencia:</b> ${competencia}</p>
                 <p style="font-size:13px;"><b>Observaciones:</b> ${obs || 'Ninguna'}</p>
                 
-                <a href="http://www.google.com/maps/search/?api=1&query=${ubicacion}" target="_blank" class="btn-blue-act" style="width:100%; text-align:center;">🚀 INICIAR RUTA GPS</a>
+                <a href="https://www.google.com/maps?q=${ubicacion}" target="_blank" class="btn-blue-act" style="width:100%; text-align:center;">🚀 INICIAR RUTA GPS</a>
             `;
         }
 
         function openModal(row, index) {
             const [marca, vendedor, , zona, negocio, giro, contacto, tel, correo, ubicacion, competencia, unidades, interes, obs] = row;
-            const imagen = row[15]; 
+            const imagenRaw = row[15]; 
             
             document.getElementById('modal-data').innerHTML = `
-                <div class="client-photo" style="height:250px;"><img src="${getImageUrl(imagen)}"></div>
+                ${getMediaHTML(imagenRaw)}
                 <h2 style="color:var(--primary); margin:0;">${negocio}</h2>
                 <p style="margin:5px 0;"><b>Contacto:</b> ${contacto} (${tel})</p>
                 <p style="margin:5px 0;"><b>Giro:</b> ${giro}</p>
                 <p style="margin:5px 0;"><b>Unidades:</b> ${unidades || 'N/A'}</p>
-                <p style="margin:5px 0;"><b>Competencia:</b> ${competencia}</p>
                 <p style="margin:5px 0;"><b>Interés:</b> ${interes}</p>
                 <p style="margin:5px 0;"><b>Observaciones:</b> ${obs || 'N/A'}</p>
-                <p style="font-size:11px; color:#999;">Vendedor: ${vendedor} | Zona: ${zona}</p>
+                <p style="font-size:11px; color:#999; margin-top:10px;">Vendedor: ${vendedor} | Zona: ${zona}</p>
                 <a href="https://wa.me/52${tel.replace(/\D/g,'')}" target="_blank" class="btn-blue-act" style="background:var(--accent); width:100%; text-align:center;">ENVIAR WHATSAPP</a>
             `;
             document.getElementById('clientModal').style.display = "block";
