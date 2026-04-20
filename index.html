@@ -61,12 +61,11 @@
         .chart-container { position: relative; height: 320px; width: 100%; margin-top: 10px; }
 
         /* --- TABLA --- */
-        .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; background: white; padding: 15px; border-radius: 15px; }
-        .filter-row select, .filter-row input { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; flex: 1; min-width: 140px; }
+        .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; background: white; padding: 15px; border-radius: 15px; border: 1px solid #ddd; }
+        .filter-row select, .filter-row input { padding: 10px 12px; border-radius: 8px; border: 1px solid #ddd; flex: 1; min-width: 140px; font-size: 13px; }
         .table-container { background: white; padding: 10px; border-radius: 15px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1200px; }
         th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; cursor: pointer; border-bottom: 3px solid var(--secondary); white-space: nowrap; }
-        th::after { content: " ↕"; font-size: 10px; color: #999; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
         .row-sold { background-color: var(--sold) !important; border-left: 5px solid var(--sold-border); }
         .badge-sold { background: var(--sold-border); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; }
@@ -84,11 +83,9 @@
 
         /* --- MODAL --- */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
-        .modal-content { background: white; margin: 2% auto; padding: 30px; width: 90%; max-width: 650px; border-radius: 20px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .close-btn { position: absolute; top: 10px; right: 20px; font-size: 40px; cursor: pointer; color: #333; font-weight: bold; z-index: 2100; transition: 0.2s; }
-        .close-btn:hover { color: red; }
-        .visit-card { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 5px; border-left: 3px solid var(--secondary); font-size: 12px; }
-        .img-preview { width: 100%; height: 320px; object-fit: cover; border-radius: 15px; margin-bottom: 20px; border: 1px solid #eee; background: #eee; overflow: hidden; }
+        .modal-content { background: white; margin: 2% auto; padding: 30px; width: 90%; max-width: 650px; border-radius: 20px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .close-btn { position: absolute; top: 10px; right: 20px; font-size: 40px; cursor: pointer; color: #333; }
+        .img-preview { width: 100%; height: 320px; object-fit: cover; border-radius: 15px; margin-bottom: 20px; background: #eee; }
 
         @media (max-width: 900px) {
             .map-layout { flex-direction: column; }
@@ -138,14 +135,10 @@
                     <div class="big-number" id="stat-total">0</div>
                     <p style="font-size:11px; color:#666; font-weight:bold; text-transform:uppercase;">Prospectos por Vendedor</p>
                     <div class="stat-list-detail" id="detail-vendedores" style="max-height: 120px;"></div>
-                    <p style="font-size:11px; color:#666; font-weight:bold; text-transform:uppercase; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">Cobertura por Zona</p>
-                    <div class="stat-list-detail" id="detail-zonas" style="max-height: 120px;"></div>
                 </div>
                 <div class="chart-card"><h4>Efectividad de Venta</h4><div class="chart-container"><canvas id="chartConv"></canvas></div></div>
                 <div class="chart-card"><h4>Rendimiento Vendedores</h4><div class="chart-container"><canvas id="chartVend"></canvas></div></div>
                 <div class="chart-card"><h4>Zonas Estratégicas</h4><div class="chart-container"><canvas id="chartZon"></canvas></div></div>
-                <div class="chart-card"><h4>Giro de Negocio</h4><div class="chart-container"><canvas id="chartGir"></canvas></div></div>
-                <div class="chart-card"><h4>Nivel de Interés</h4><div class="chart-container"><canvas id="chartInt"></canvas></div></div>
             </div>
         </div>
 
@@ -156,7 +149,7 @@
                 <table id="mainTable">
                     <thead>
                         <tr>
-                            <th onclick="sortTable(0)">Fecha</th>
+                            <th onclick="sortTable(0)">Fecha/Hora</th>
                             <th onclick="sortTable(1)">Vendedor</th>
                             <th onclick="sortTable(2)">Negocio</th>
                             <th onclick="sortTable(3)">Giro</th>
@@ -226,10 +219,9 @@
             return cleanUrl;
         }
 
-        // --- INICIALIZACIÓN DEL MAPA CON TILE ESTABLE (CARTO) ---
         map = L.map('map').setView([20.0842, -98.3672], 12);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            attribution: '© OpenStreetMap © CARTO'
         }).addTo(map);
 
         Papa.parse(csvUrl, {
@@ -241,45 +233,44 @@
         });
 
         function processAll() {
-            const sets = { v: new Set(), z: new Set(), g: new Set(), i: new Set() };
+            const sets = { v: new Set(), z: new Set(), i: new Set(), d: new Set() };
             let stats = { vend: {}, zon: {}, gir: {}, int: {}, closed: 0 };
 
             globalData.slice(1).forEach(row => {
+                const fullDate = row[0] || "";
+                const dateOnly = fullDate.split(' ')[0]; // Extrae solo el día
                 const vend = row[1]; 
                 const zona = row[3]; 
-                const giro = row[5]; 
                 const int = row[12]; 
                 const venta = row[16]; 
 
+                if(dateOnly) sets.d.add(dateOnly);
                 stats.vend[vend] = (stats.vend[vend] || 0) + 1;
                 stats.zon[zona] = (stats.zon[zona] || 0) + 1;
-                stats.gir[giro] = (stats.gir[giro] || 0) + 1;
-                stats.int[int] = (stats.int[int] || 0) + 1;
                 if(venta && venta.trim() !== "") stats.closed++;
                 
-                sets.v.add(vend); sets.z.add(zona); sets.g.add(giro); sets.i.add(int);
+                sets.v.add(vend); sets.z.add(zona); sets.i.add(int);
                 if(!colorMap[vend]) colorMap[vend] = palette[Object.keys(colorMap).length % palette.length];
             });
 
-            // --- FILTROS CON FECHA AGREGADA ---
+            // Generar Opciones de Fecha Ordenadas
+            const dateOptions = Array.from(sets.d).sort((a,b) => {
+                // Intento simple de ordenación por fecha si es DD/MM/YYYY
+                return b.split('/').reverse().join('') - a.split('/').reverse().join('');
+            }).map(d => `<option value="${d}">${d}</option>`).join('');
+
             const filterHTML = `
-                <input type="text" class="f-q" placeholder="🔍 Buscar..." onkeyup="multiFilter()">
-                <input type="date" class="f-d" onchange="multiFilter()" title="Filtrar por fecha">
-                <select class="f-v" onchange="multiFilter()"><option value="">Vendedor</option>${Array.from(sets.v).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
-                <select class="f-z" onchange="multiFilter()"><option value="">Zona</option>${Array.from(sets.z).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
-                <select class="f-i" onchange="multiFilter()"><option value="">Interés</option>${Array.from(sets.i).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
+                <input type="text" class="f-q" placeholder="🔍 Buscar negocio..." onkeyup="multiFilter()">
+                <select class="f-d" onchange="multiFilter()"><option value="">📅 Todas las Fechas</option>${dateOptions}</select>
+                <select class="f-v" onchange="multiFilter()"><option value="">👤 Vendedor</option>${Array.from(sets.v).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
+                <select class="f-z" onchange="multiFilter()"><option value="">📍 Zona</option>${Array.from(sets.z).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
+                <select class="f-i" onchange="multiFilter()"><option value="">⭐ Interés</option>${Array.from(sets.i).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
             `;
+            
             document.getElementById('filters-list').innerHTML = filterHTML;
             document.getElementById('filters-map').innerHTML = filterHTML.replace(/multiFilter/g, 'multiFilterMap');
 
             document.getElementById('stat-total').innerText = globalData.length - 1;
-            
-            let vDet = ''; for(let v in stats.vend) vDet += `<div style="margin-bottom:4px;"><span style="color:${colorMap[v]}">●</span> ${v}: <b>${stats.vend[v]}</b></div>`;
-            document.getElementById('detail-vendedores').innerHTML = vDet;
-
-            let zDet = ''; for(let z in stats.zon) zDet += `<div style="margin-bottom:4px;"><span style="color:var(--primary)">📍</span> ${z}: <b>${stats.zon[z]}</b></div>`;
-            document.getElementById('detail-zonas').innerHTML = zDet;
-
             renderTable(globalData.slice(1));
             renderMap(globalData.slice(1));
             initCharts(stats);
@@ -299,7 +290,7 @@
                     <td>${row[6]}</td>
                     <td>${row[3]}</td>
                     <td>${row[12]}</td>
-                    <td><a href="https://wa.me/52${row[7].replace(/\D/g,'')}" target="_blank" class="btn-whatsapp" style="padding:4px 8px; text-decoration:none;">🟢 WA</a></td>
+                    <td><a href="https://wa.me/52${row[7].replace(/\D/g,'')}" target="_blank" class="btn-whatsapp" style="padding:4px 8px; text-decoration:none; background:var(--accent); color:white; border-radius:5px;">WA</a></td>
                 `;
                 tr.onclick = (e) => { if(e.target.tagName !== 'A') openModal(row); };
                 body.appendChild(tr);
@@ -317,76 +308,29 @@
                 const coords = parseCoords(row[9]);
                 if(coords) {
                     const marker = L.circleMarker(coords, { radius: 10, fillColor: row[16] ? '#28a745' : colorMap[vend], color: '#fff', weight: 2, fillOpacity: 0.9 }).addTo(map);
-                    marker.bindPopup(`<b>${row[4]}</b><br>${vend}`);
                     marker.on('click', () => openModal(row));
                     markersArray.push(marker);
                 }
                 const li = document.createElement('div');
                 li.className = `client-item ${row[16] ? 'row-sold' : ''}`;
                 li.style.padding = "10px"; li.style.borderBottom = "1px solid #eee"; li.style.cursor = "pointer";
-                li.innerHTML = `<b>${row[4]}</b><br><small><span style="color:${colorMap[vend]}">●</span> ${vend} | ${row[3]}</small>`;
+                li.innerHTML = `<b>${row[4]}</b><br><small>${row[0].split(' ')[0]} | ${vend}</small>`;
                 li.onclick = () => { if(coords) map.setView(coords, 17); openModal(row); };
                 mList.appendChild(li);
             });
         }
 
-        function openModal(row) {
-            const [alta, vend, , zona, neg, giro, cont, tel, , ubi, comp, unid, int, obs, , img, venta, v1, v2, v3, v4] = row;
-            const coords = parseCoords(ubi);
-            let visitas = '';
-            [v1, v2, v3, v4].forEach((v, idx) => { if(v && v.trim() !== "") visitas += `<div class="visit-card"><b>Visita ${idx+1}:</b> ${v}</div>`; });
-
-            let mediaHtml = '';
-            if (img && img.includes('<iframe')) {
-                mediaHtml = `<div class="img-preview" style="border:none;">${img.replace(/width="[^"]*"/, 'width="100%"').replace(/height="[^"]*"/, 'height="320"')}</div>`;
-            } else {
-                let imgSrc = getImg(img);
-                mediaHtml = `<img src="${imgSrc || 'https://via.placeholder.com/500x300?text=Sin+Imagen+Disponible'}" class="img-preview" onerror="this.src='https://via.placeholder.com/500x300?text=Error+al+cargar+imagen'">`;
-            }
-
-            document.getElementById('modal-data').innerHTML = `
-                ${mediaHtml}
-                <h2 style="color:var(--primary); margin:0;">${neg} ${venta ? '✅' : ''}</h2>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; font-size:13px; margin-top:15px;">
-                    <div><b>Vendedor:</b> ${vend}</div>
-                    <div><b>Zona:</b> ${zona}</div>
-                    <div><b>Contacto:</b> ${cont}</div>
-                    <div><b>WhatsApp:</b> ${tel}</div>
-                    <div><b>Unidades:</b> ${unid || 'N/A'}</div>
-                    <div><b>Giro:</b> ${giro}</div>
-                </div>
-                <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
-                <p style="font-size:13px;"><b>Nivel de Interés:</b> <span style="color:var(--primary); font-weight:bold;">${int}</span></p>
-                <p style="font-size:13px;"><b>Competencia:</b> ${comp || 'N/A'}</p>
-                
-                ${venta ? `<div style="background:var(--sold); padding:12px; border-radius:10px; margin-top:10px; border:1px solid var(--sold-border);">
-                    <h4 style="margin:0; color:var(--sold-border);">💰 VENTA CONCRETADA</h4>
-                    <p style="margin:5px 0; font-size:13px;"><b>Detalles:</b> ${venta}</p>
-                </div>` : ''}
-
-                <h4 style="margin-top:20px; margin-bottom:10px; border-bottom:1px solid #eee;">Seguimiento de Visitas</h4>
-                ${visitas || '<p style="font-size:12px; color:#999;">Sin visitas registradas.</p>'}
-                <p style="font-size:12px; background:#f0f4ff; padding:10px; border-radius:8px; margin-top:15px;"><b>Observaciones:</b><br>${obs || 'N/A'}</p>
-                
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px;">
-                    <a href="https://wa.me/52${tel.replace(/\D/g,'')}" target="_blank" class="btn-label" style="background:var(--accent); text-align:center; margin:0;">WHATSAPP</a>
-                    ${coords ? `<a href="https://www.google.com/maps?q=${coords[0]},${coords[1]}" target="_blank" class="btn-label" style="text-align:center; margin:0;">ABRIR EN GPS</a>` : ''}
-                </div>
-            `;
-            document.getElementById('clientModal').style.display = "block";
-        }
-
-        // --- LÓGICA DE FILTROS ACTUALIZADA (CON FECHA) ---
         function multiFilter() {
             const q = document.querySelector('#lista .f-q').value.toLowerCase();
-            const d = document.querySelector('#lista .f-d').value; // Fecha
+            const d = document.querySelector('#lista .f-d').value; // Fecha del select
             const v = document.querySelector('#lista .f-v').value;
             const z = document.querySelector('#lista .f-z').value;
             const i = document.querySelector('#lista .f-i').value;
             
             document.querySelectorAll('#tableBody tr').forEach(tr => {
-                const rowDate = tr.cells[0].innerText; // Col Fecha
-                const matchDate = !d || rowDate.includes(d);
+                const rowFullDate = tr.cells[0].innerText;
+                const rowDateOnly = rowFullDate.split(' ')[0];
+                const matchDate = !d || rowDateOnly === d;
                 const matchText = tr.innerText.toLowerCase().includes(q) && (!v || tr.cells[1].innerText === v) && (!z || tr.cells[5].innerText === z) && (!i || tr.cells[6].innerText === i);
                 tr.style.display = (matchDate && matchText) ? '' : 'none';
             });
@@ -394,17 +338,46 @@
 
         function multiFilterMap() {
             const q = document.querySelector('#filters-map .f-q').value.toLowerCase();
-            const d = document.querySelector('#filters-map .f-d').value; // Fecha
+            const d = document.querySelector('#filters-map .f-d').value;
             const v = document.querySelector('#filters-map .f-v').value;
             const z = document.querySelector('#filters-map .f-z').value;
             const i = document.querySelector('#filters-map .f-i').value;
             
             const filtered = globalData.slice(1).filter(row => {
-                const matchDate = !d || row[0].includes(d);
+                const rowDateOnly = (row[0] || "").split(' ')[0];
+                const matchDate = !d || rowDateOnly === d;
                 const matchText = row.join(' ').toLowerCase().includes(q) && (!v || row[1] === v) && (!z || row[3] === z) && (!i || row[12] === i);
                 return matchDate && matchText;
             });
             renderMap(filtered);
+        }
+
+        function openModal(row) {
+            const [alta, vend, , zona, neg, giro, cont, tel, , ubi, comp, unid, int, obs, , img, venta, v1, v2, v3, v4] = row;
+            const coords = parseCoords(ubi);
+            let mediaHtml = '';
+            if (img && img.includes('<iframe')) {
+                mediaHtml = `<div class="img-preview" style="border:none;">${img.replace(/width="[^"]*"/, 'width="100%"').replace(/height="[^"]*"/, 'height="320"')}</div>`;
+            } else {
+                let imgSrc = getImg(img);
+                mediaHtml = `<img src="${imgSrc || 'https://via.placeholder.com/500x300?text=Sin+Imagen'}" class="img-preview">`;
+            }
+
+            document.getElementById('modal-data').innerHTML = `
+                ${mediaHtml}
+                <h2 style="color:var(--primary); margin:0;">${neg}</h2>
+                <p><b>Fecha Registro:</b> ${alta}</p>
+                <p><b>Vendedor:</b> ${vend} | <b>Zona:</b> ${zona}</p>
+                <p><b>Contacto:</b> ${cont} (${tel})</p>
+                <p><b>Giro:</b> ${giro} | <b>Unidades:</b> ${unid || 'N/A'}</p>
+                <p><b>Interés:</b> ${int}</p>
+                <div style="background:#f0f4ff; padding:10px; border-radius:8px;"><b>Observaciones:</b> ${obs || 'N/A'}</div>
+                <div style="margin-top:15px; display:flex; gap:10px;">
+                    <a href="https://wa.me/52${tel.replace(/\D/g,'')}" target="_blank" class="btn-label" style="background:var(--accent); flex:1; text-align:center;">WhatsApp</a>
+                    ${coords ? `<a href="https://www.google.com/maps?q=${coords[0]},${coords[1]}" target="_blank" class="btn-label" style="flex:1; text-align:center;">Ruta GPS</a>` : ''}
+                </div>
+            `;
+            document.getElementById('clientModal').style.display = "block";
         }
 
         function sortTable(n) {
@@ -424,17 +397,14 @@
         }
 
         function initCharts(stats) {
-            const cfg = (labelData, isVend = false, customColors = null) => ({
+            const cfg = (labelData, isVend = false) => ({
                 type: 'pie',
-                data: { labels: Object.keys(labelData), datasets: [{ data: Object.values(labelData), backgroundColor: customColors || (isVend ? Object.keys(labelData).map(v => colorMap[v]) : palette) }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } }, datalabels: { color: '#fff', font: { weight: 'bold', size: 14 }, formatter: (value, ctx) => { let sum = ctx.dataset.data.reduce((a, b) => a + b, 0); return ((value * 100) / (sum || 1)).toFixed(1) + "%"; } } } }
+                data: { labels: Object.keys(labelData), datasets: [{ data: Object.values(labelData), backgroundColor: isVend ? Object.keys(labelData).map(v => colorMap[v]) : palette }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }, datalabels: { color: '#fff', formatter: (v, ctx) => { let s = ctx.dataset.data.reduce((a, b) => a + b, 0); return (v*100/s).toFixed(0) + "%"; } } } }
             });
-            const convData = { "Ventas": stats.closed, "En Proceso": (globalData.length - 1) - stats.closed };
-            new Chart(document.getElementById('chartConv'), cfg(convData, false, ['#28a745', '#004a99']));
+            new Chart(document.getElementById('chartConv'), cfg({ "Ventas": stats.closed, "Proceso": (globalData.length-1)-stats.closed }, false));
             new Chart(document.getElementById('chartVend'), cfg(stats.vend, true));
             new Chart(document.getElementById('chartZon'), cfg(stats.zon));
-            new Chart(document.getElementById('chartGir'), cfg(stats.gir));
-            new Chart(document.getElementById('chartInt'), cfg(stats.int));
         }
     </script>
 </body>
