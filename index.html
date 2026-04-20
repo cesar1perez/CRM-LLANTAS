@@ -236,9 +236,17 @@
             const sets = { v: new Set(), z: new Set(), i: new Set(), d: new Set() };
             let stats = { vend: {}, zon: {}, gir: {}, int: {}, closed: 0 };
 
+            // Primero crear el colorMap para que esté listo al renderizar
+            globalData.slice(1).forEach(row => {
+                const vend = row[1];
+                if(vend && !colorMap[vend]) {
+                    colorMap[vend] = palette[Object.keys(colorMap).length % palette.length];
+                }
+            });
+
             globalData.slice(1).forEach(row => {
                 const fullDate = row[0] || "";
-                const dateOnly = fullDate.split(' ')[0]; // Extrae solo el día
+                const dateOnly = fullDate.split(' ')[0];
                 const vend = row[1]; 
                 const zona = row[3]; 
                 const int = row[12]; 
@@ -250,12 +258,9 @@
                 if(venta && venta.trim() !== "") stats.closed++;
                 
                 sets.v.add(vend); sets.z.add(zona); sets.i.add(int);
-                if(!colorMap[vend]) colorMap[vend] = palette[Object.keys(colorMap).length % palette.length];
             });
 
-            // Generar Opciones de Fecha Ordenadas
             const dateOptions = Array.from(sets.d).sort((a,b) => {
-                // Intento simple de ordenación por fecha si es DD/MM/YYYY
                 return b.split('/').reverse().join('') - a.split('/').reverse().join('');
             }).map(d => `<option value="${d}">${d}</option>`).join('');
 
@@ -271,6 +276,10 @@
             document.getElementById('filters-map').innerHTML = filterHTML.replace(/multiFilter/g, 'multiFilterMap');
 
             document.getElementById('stat-total').innerText = globalData.length - 1;
+
+            let vDet = ''; for(let v in stats.vend) vDet += `<div style="margin-bottom:4px;"><span style="color:${colorMap[v]}">●</span> ${v}: <b>${stats.vend[v]}</b></div>`;
+            document.getElementById('detail-vendedores').innerHTML = vDet;
+
             renderTable(globalData.slice(1));
             renderMap(globalData.slice(1));
             initCharts(stats);
@@ -284,13 +293,13 @@
                 if (row[16] && row[16].trim() !== "") tr.className = "row-sold";
                 tr.innerHTML = `
                     <td>${row[0]}</td>
-                    <td style="color:${colorMap[row[1]]}; font-weight:bold;">${row[1]}</td>
+                    <td style="color:${colorMap[row[1]]}; font-weight:bold;"><span style="font-size:10px">●</span> ${row[1]}</td>
                     <td><b>${row[4]}</b> ${row[16] ? '<span class="badge-sold">VENTA</span>' : ''}</td>
                     <td>${row[5]}</td>
                     <td>${row[6]}</td>
                     <td>${row[3]}</td>
                     <td>${row[12]}</td>
-                    <td><a href="https://wa.me/52${row[7].replace(/\D/g,'')}" target="_blank" class="btn-whatsapp" style="padding:4px 8px; text-decoration:none; background:var(--accent); color:white; border-radius:5px;">WA</a></td>
+                    <td><a href="https://wa.me/52${row[7].replace(/\D/g,'')}" target="_blank" class="btn-whatsapp" style="padding:4px 8px; text-decoration:none; background:var(--accent); color:white; border-radius:5px; font-size:10px; font-weight:bold;">WHATSAPP</a></td>
                 `;
                 tr.onclick = (e) => { if(e.target.tagName !== 'A') openModal(row); };
                 body.appendChild(tr);
@@ -314,7 +323,7 @@
                 const li = document.createElement('div');
                 li.className = `client-item ${row[16] ? 'row-sold' : ''}`;
                 li.style.padding = "10px"; li.style.borderBottom = "1px solid #eee"; li.style.cursor = "pointer";
-                li.innerHTML = `<b>${row[4]}</b><br><small>${row[0].split(' ')[0]} | ${vend}</small>`;
+                li.innerHTML = `<b>${row[4]}</b><br><small>${row[0].split(' ')[0]} | <span style="color:${colorMap[vend]}; font-weight:bold;">${vend}</span></small>`;
                 li.onclick = () => { if(coords) map.setView(coords, 17); openModal(row); };
                 mList.appendChild(li);
             });
@@ -322,7 +331,7 @@
 
         function multiFilter() {
             const q = document.querySelector('#lista .f-q').value.toLowerCase();
-            const d = document.querySelector('#lista .f-d').value; // Fecha del select
+            const d = document.querySelector('#lista .f-d').value;
             const v = document.querySelector('#lista .f-v').value;
             const z = document.querySelector('#lista .f-z').value;
             const i = document.querySelector('#lista .f-i').value;
@@ -330,8 +339,9 @@
             document.querySelectorAll('#tableBody tr').forEach(tr => {
                 const rowFullDate = tr.cells[0].innerText;
                 const rowDateOnly = rowFullDate.split(' ')[0];
+                const rowVend = tr.cells[1].innerText.replace('● ', '');
                 const matchDate = !d || rowDateOnly === d;
-                const matchText = tr.innerText.toLowerCase().includes(q) && (!v || tr.cells[1].innerText === v) && (!z || tr.cells[5].innerText === z) && (!i || tr.cells[6].innerText === i);
+                const matchText = tr.innerText.toLowerCase().includes(q) && (!v || rowVend === v) && (!z || tr.cells[5].innerText === z) && (!i || tr.cells[6].innerText === i);
                 tr.style.display = (matchDate && matchText) ? '' : 'none';
             });
         }
@@ -366,15 +376,17 @@
             document.getElementById('modal-data').innerHTML = `
                 ${mediaHtml}
                 <h2 style="color:var(--primary); margin:0;">${neg}</h2>
-                <p><b>Fecha Registro:</b> ${alta}</p>
-                <p><b>Vendedor:</b> ${vend} | <b>Zona:</b> ${zona}</p>
-                <p><b>Contacto:</b> ${cont} (${tel})</p>
-                <p><b>Giro:</b> ${giro} | <b>Unidades:</b> ${unid || 'N/A'}</p>
-                <p><b>Interés:</b> ${int}</p>
-                <div style="background:#f0f4ff; padding:10px; border-radius:8px;"><b>Observaciones:</b> ${obs || 'N/A'}</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:13px; margin-top:15px;">
+                    <div><b>Vendedor:</b> <span style="color:${colorMap[vend]}; font-weight:bold;">${vend}</span></div>
+                    <div><b>Fecha:</b> ${alta}</div>
+                    <div><b>Zona:</b> ${zona}</div>
+                    <div><b>WhatsApp:</b> ${tel}</div>
+                </div>
+                <p style="font-size:13px; border-top:1px solid #eee; padding-top:10px;"><b>Giro:</b> ${giro} | <b>Interés:</b> ${int}</p>
+                <div style="background:#f0f4ff; padding:10px; border-radius:8px; font-size:12px;"><b>Observaciones:</b><br>${obs || 'N/A'}</div>
                 <div style="margin-top:15px; display:flex; gap:10px;">
                     <a href="https://wa.me/52${tel.replace(/\D/g,'')}" target="_blank" class="btn-label" style="background:var(--accent); flex:1; text-align:center;">WhatsApp</a>
-                    ${coords ? `<a href="https://www.google.com/maps?q=${coords[0]},${coords[1]}" target="_blank" class="btn-label" style="flex:1; text-align:center;">Ruta GPS</a>` : ''}
+                    ${coords ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${coords[0]},${coords[1]}" target="_blank" class="btn-label" style="flex:1; text-align:center;">Ruta GPS</a>` : ''}
                 </div>
             `;
             document.getElementById('clientModal').style.display = "block";
@@ -400,7 +412,7 @@
             const cfg = (labelData, isVend = false) => ({
                 type: 'pie',
                 data: { labels: Object.keys(labelData), datasets: [{ data: Object.values(labelData), backgroundColor: isVend ? Object.keys(labelData).map(v => colorMap[v]) : palette }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }, datalabels: { color: '#fff', formatter: (v, ctx) => { let s = ctx.dataset.data.reduce((a, b) => a + b, 0); return (v*100/s).toFixed(0) + "%"; } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }, datalabels: { color: '#fff', font: { weight: 'bold' }, formatter: (v, ctx) => { let s = ctx.dataset.data.reduce((a, b) => a + b, 0); return (v*100/s).toFixed(0) + "%"; } } } }
             });
             new Chart(document.getElementById('chartConv'), cfg({ "Ventas": stats.closed, "Proceso": (globalData.length-1)-stats.closed }, false));
             new Chart(document.getElementById('chartVend'), cfg(stats.vend, true));
