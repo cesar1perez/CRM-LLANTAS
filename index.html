@@ -226,13 +226,16 @@
             return cleanUrl;
         }
 
+        // --- INICIALIZACIÓN DEL MAPA CON TILE ESTABLE (CARTO) ---
         map = L.map('map').setView([20.0842, -98.3672], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        }).addTo(map);
 
         Papa.parse(csvUrl, {
             download: true, header: false,
             complete: function(results) {
-                globalData = results.data.filter(r => r[4]); // Basado en Negocio (Col E)
+                globalData = results.data.filter(r => r[4]); 
                 processAll();
             }
         });
@@ -242,11 +245,11 @@
             let stats = { vend: {}, zon: {}, gir: {}, int: {}, closed: 0 };
 
             globalData.slice(1).forEach(row => {
-                const vend = row[1]; // Col B
-                const zona = row[3]; // Col D
-                const giro = row[5]; // Col F
-                const int = row[12]; // Col M
-                const venta = row[16]; // Col Q
+                const vend = row[1]; 
+                const zona = row[3]; 
+                const giro = row[5]; 
+                const int = row[12]; 
+                const venta = row[16]; 
 
                 stats.vend[vend] = (stats.vend[vend] || 0) + 1;
                 stats.zon[zona] = (stats.zon[zona] || 0) + 1;
@@ -258,8 +261,10 @@
                 if(!colorMap[vend]) colorMap[vend] = palette[Object.keys(colorMap).length % palette.length];
             });
 
+            // --- FILTROS CON FECHA AGREGADA ---
             const filterHTML = `
                 <input type="text" class="f-q" placeholder="🔍 Buscar..." onkeyup="multiFilter()">
+                <input type="date" class="f-d" onchange="multiFilter()" title="Filtrar por fecha">
                 <select class="f-v" onchange="multiFilter()"><option value="">Vendedor</option>${Array.from(sets.v).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
                 <select class="f-z" onchange="multiFilter()"><option value="">Zona</option>${Array.from(sets.z).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
                 <select class="f-i" onchange="multiFilter()"><option value="">Interés</option>${Array.from(sets.i).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
@@ -326,7 +331,6 @@
         }
 
         function openModal(row) {
-            // Indices: 0:Marca, 1:Vend, 3:Zona, 4:Neg, 5:Giro, 6:Cont, 7:Tel, 9:Ubi, 10:Comp, 11:Unid, 12:Int, 13:Obs, 15:Img, 16:Venta, 17-20:Visitas
             const [alta, vend, , zona, neg, giro, cont, tel, , ubi, comp, unid, int, obs, , img, venta, v1, v2, v3, v4] = row;
             const coords = parseCoords(ubi);
             let visitas = '';
@@ -372,24 +376,33 @@
             document.getElementById('clientModal').style.display = "block";
         }
 
+        // --- LÓGICA DE FILTROS ACTUALIZADA (CON FECHA) ---
         function multiFilter() {
             const q = document.querySelector('#lista .f-q').value.toLowerCase();
+            const d = document.querySelector('#lista .f-d').value; // Fecha
             const v = document.querySelector('#lista .f-v').value;
             const z = document.querySelector('#lista .f-z').value;
             const i = document.querySelector('#lista .f-i').value;
+            
             document.querySelectorAll('#tableBody tr').forEach(tr => {
-                const match = tr.innerText.toLowerCase().includes(q) && (!v || tr.cells[1].innerText === v) && (!z || tr.cells[5].innerText === z) && (!i || tr.cells[6].innerText === i);
-                tr.style.display = match ? '' : 'none';
+                const rowDate = tr.cells[0].innerText; // Col Fecha
+                const matchDate = !d || rowDate.includes(d);
+                const matchText = tr.innerText.toLowerCase().includes(q) && (!v || tr.cells[1].innerText === v) && (!z || tr.cells[5].innerText === z) && (!i || tr.cells[6].innerText === i);
+                tr.style.display = (matchDate && matchText) ? '' : 'none';
             });
         }
 
         function multiFilterMap() {
             const q = document.querySelector('#filters-map .f-q').value.toLowerCase();
+            const d = document.querySelector('#filters-map .f-d').value; // Fecha
             const v = document.querySelector('#filters-map .f-v').value;
             const z = document.querySelector('#filters-map .f-z').value;
             const i = document.querySelector('#filters-map .f-i').value;
+            
             const filtered = globalData.slice(1).filter(row => {
-                return row.join(' ').toLowerCase().includes(q) && (!v || row[1] === v) && (!z || row[3] === z) && (!i || row[12] === i);
+                const matchDate = !d || row[0].includes(d);
+                const matchText = row.join(' ').toLowerCase().includes(q) && (!v || row[1] === v) && (!z || row[3] === z) && (!i || row[12] === i);
+                return matchDate && matchText;
             });
             renderMap(filtered);
         }
