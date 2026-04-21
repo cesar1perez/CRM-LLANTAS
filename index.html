@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Llanterama Tulancingo - CRM Maestro</title>
+    <title>Llanterama - Panel de Control 2026</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -62,27 +62,26 @@
         .stat-list-detail { text-align: left; font-size: 12px; max-height: 150px; overflow-y: auto; padding: 10px; border-top: 1px solid #eee; margin-top: 10px; }
         .chart-container { position: relative; height: 280px; width: 100%; margin-top: 10px; }
 
-        /* --- TABLA --- */
-        .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; background: white; padding: 15px; border-radius: 15px; border: 1px solid #ddd; }
-        .filter-row select, .filter-row input { padding: 10px 12px; border-radius: 8px; border: 1px solid #ddd; flex: 1; min-width: 140px; font-size: 13px; }
-        .counter-badge { background: var(--primary); color: white; padding: 5px 15px; border-radius: 50px; font-weight: bold; margin-bottom: 10px; display: inline-block; font-size: 14px; }
+        /* --- FILTROS Y TABLA --- */
+        .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; background: white; padding: 15px; border-radius: 15px; border: 1px solid #ddd; }
+        .filter-row select, .filter-row input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; flex: 1; min-width: 130px; font-size: 12px; }
+        .counter-badge { background: var(--primary); color: white; padding: 6px 16px; border-radius: 50px; font-weight: bold; margin-bottom: 10px; display: inline-block; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        .table-container { background: white; padding: 10px; border-radius: 15px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1200px; }
-        th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; cursor: pointer; border-bottom: 3px solid var(--secondary); white-space: nowrap; }
+        .table-container { background: white; padding: 10px; border-radius: 15px; overflow-x: auto; border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
+        th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; cursor: pointer; border-bottom: 3px solid var(--secondary); }
         td { padding: 12px; border-bottom: 1px solid #eee; }
         
-        /* Estados de Fila */
         .row-sold { background-color: var(--sold) !important; border-left: 5px solid var(--sold-border); }
         .row-established { background-color: var(--established) !important; border-left: 5px solid var(--established-border); }
-        .badge-status { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; color: white; }
+        .badge-status { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; color: white; text-transform: uppercase; }
         .bg-sold { background: var(--sold-border); }
         .bg-established { background: var(--established-border); }
 
         /* --- MAPA --- */
         .map-layout { display: flex; gap: 15px; height: 80vh; position: relative; }
         #map { flex: 1; border-radius: 15px; border: 1px solid #ddd; z-index: 1; }
-        .map-sidebar { width: 380px; background: white; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd; transition: 0.3s; z-index: 10; }
+        .map-sidebar { width: 380px; background: white; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd; z-index: 10; }
         .toggle-sidebar {
             position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
             z-index: 100; background: var(--primary); color: white; 
@@ -99,7 +98,7 @@
 
         @media (max-width: 900px) {
             .map-layout { flex-direction: column; }
-            .map-sidebar { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: translateY(105%); }
+            .map-sidebar { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: translateY(105%); transition: 0.3s; }
             .map-sidebar.open { transform: translateY(0); }
             .toggle-sidebar { display: block; }
         }
@@ -115,8 +114,8 @@
     <div class="container">
         <div id="home" class="view-section active">
             <div class="home-hero">
-                <div class="dynamic-title" style="font-size: 45px;">CRM Maestro 2026</div>
-                <p>Control de Prospección y Cartera Tulancingo - Poza Rica</p>
+                <div class="dynamic-title" style="font-size: 38px;">Panel de Control Clientes y Prospectos 2026</div>
+                <p>Monitoreo en tiempo real de Prospección y Cartera</p>
             </div>
             <div class="action-grid">
                 <a href="#" class="action-btn" onclick="showView('stats-view')">
@@ -132,13 +131,13 @@
                 <a href="#" class="action-btn" onclick="showView('mapa-view')">
                     <div style="font-size: 55px;">📍</div>
                     <h3>Mapa Logístico</h3>
-                    <div class="btn-label" style="background:var(--secondary); color:var(--white);">GEOLOCALIZACIÓN</div>
+                    <div class="btn-label" style="background:var(--secondary);">GEOLOCALIZACIÓN</div>
                 </a>
             </div>
         </div>
 
         <div id="stats-view" class="view-section">
-            <button class="btn-back" onclick="showView('home')">← VOLVER</button>
+            <button class="btn-back" onclick="showView('home')">← VOLVER AL MENÚ</button>
             <div class="stats-grid">
                 <div class="chart-card">
                     <h4>Resumen General</h4>
@@ -155,8 +154,8 @@
         </div>
 
         <div id="lista" class="view-section">
-            <button class="btn-back" onclick="showView('home')">← VOLVER</button>
-            <div class="counter-badge">Mostrando: <span id="main-counter">0</span> registros</div>
+            <button class="btn-back" onclick="showView('home')">← VOLVER AL MENÚ</button>
+            <div><span class="counter-badge" id="main-counter">Mostrando: 0 registros</span></div>
             <div class="filter-row" id="filters-list"></div>
             <div class="table-container">
                 <table id="mainTable">
@@ -169,7 +168,7 @@
                             <th onclick="sortTable(4)">Contacto</th>
                             <th onclick="sortTable(5)">Zona</th>
                             <th onclick="sortTable(6)">Interés</th>
-                            <th>Acción</th>
+                            <th>WhatsApp</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
@@ -178,13 +177,15 @@
         </div>
 
         <div id="mapa-view" class="view-section">
-            <button class="btn-back" onclick="showView('home')">← VOLVER</button>
+            <button class="btn-back" onclick="showView('home')">← VOLVER AL MENÚ</button>
             <div class="map-layout">
                 <div id="map"></div>
-                <button class="toggle-sidebar" onclick="toggleMapSidebar()">📋 VER LISTA Y FILTROS</button>
+                <button class="toggle-sidebar" onclick="toggleMapSidebar()">📋 FILTROS Y LISTA</button>
                 <div class="map-sidebar" id="mapSidebar">
                     <div style="padding: 15px; border-bottom: 1px solid #eee; background: #f8f9fa;" id="filters-map"></div>
-                    <div style="padding: 5px 15px; font-size: 12px; font-weight: bold; background: #eee;">Resultados: <span id="map-counter">0</span></div>
+                    <div style="padding: 8px 15px; font-size: 12px; font-weight: bold; background: var(--primary); color: white;">
+                        RESULTADOS EN MAPA: <span id="map-counter">0</span>
+                    </div>
                     <div class="client-list" id="mapList" style="overflow-y:auto; flex:1; padding:10px;"></div>
                 </div>
             </div>
@@ -272,11 +273,16 @@
                 .map(d => `<option value="${d}">${d}</option>`).join('');
 
             const filterHTML = `
-                <input type="text" class="f-q" placeholder="🔍 Buscar negocio..." onkeyup="multiFilter()">
+                <input type="text" class="f-q" placeholder="🔍 Buscar..." onkeyup="multiFilter()">
                 <select class="f-d" onchange="multiFilter()"><option value="">📅 Todas las Fechas</option>${dateOptions}</select>
                 <select class="f-v" onchange="multiFilter()"><option value="">👤 Vendedor</option>${Array.from(sets.v).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
                 <select class="f-z" onchange="multiFilter()"><option value="">📍 Zona</option>${Array.from(sets.z).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
-                <select class="f-i" onchange="multiFilter()"><option value="">⭐ Interés</option>${Array.from(sets.i).sort().map(v => `<option value="${v}">${v}</option>`).join('')}</select>
+                <select class="f-e" onchange="multiFilter()">
+                    <option value="">🏷️ Todos los Estados</option>
+                    <option value="prospecto">📌 Solo Prospectos</option>
+                    <option value="fijo">⭐ Clientes Fijos</option>
+                    <option value="venta">✅ Ventas Concretadas</option>
+                </select>
             `;
             
             document.getElementById('filters-list').innerHTML = filterHTML;
@@ -307,7 +313,7 @@
                     <td style="color:${colorMap[row[1]]}; font-weight:bold;"><span style="font-size:10px">●</span> ${row[1]}</td>
                     <td><b>${row[4]}</b> 
                         ${isVenta ? '<span class="badge-status bg-sold">VENTA</span>' : ''}
-                        ${isEstablished ? '<span class="badge-status bg-established">CLIENTE FIJO</span>' : ''}
+                        ${isEstablished ? '<span class="badge-status bg-established">FIJO</span>' : ''}
                     </td>
                     <td>${row[5]}</td>
                     <td>${row[6]}</td>
@@ -318,7 +324,7 @@
                 tr.onclick = (e) => { if(e.target.tagName !== 'A') openModal(row); };
                 body.appendChild(tr);
             });
-            document.getElementById('main-counter').innerText = data.length;
+            document.getElementById('main-counter').innerText = `Mostrando: ${data.length} registros`;
         }
 
         function renderMap(data) {
@@ -354,17 +360,23 @@
             const d = document.querySelector('#lista .f-d').value;
             const v = document.querySelector('#lista .f-v').value;
             const z = document.querySelector('#lista .f-z').value;
-            const i = document.querySelector('#lista .f-i').value;
+            const e = document.querySelector('#lista .f-e').value;
             
             let visibleCount = 0;
             document.querySelectorAll('#tableBody tr').forEach(tr => {
                 const rowDate = tr.cells[0].innerText.split(' ')[0];
                 const rowVend = tr.cells[1].innerText.replace('● ', '');
-                const match = (!d || rowDate === d) && tr.innerText.toLowerCase().includes(q) && (!v || rowVend === v) && (!z || tr.cells[5].innerText === z) && (!i || tr.cells[6].innerText === i);
+                
+                let rowStatus = "prospecto";
+                if(tr.classList.contains('row-sold')) rowStatus = "venta";
+                else if(tr.classList.contains('row-established')) rowStatus = "fijo";
+
+                const match = (!d || rowDate === d) && tr.innerText.toLowerCase().includes(q) && (!v || rowVend === v) && (!z || tr.cells[5].innerText === z) && (!e || rowStatus === e);
+                
                 tr.style.display = match ? '' : 'none';
                 if(match) visibleCount++;
             });
-            document.getElementById('main-counter').innerText = visibleCount;
+            document.getElementById('main-counter').innerText = `Mostrando: ${visibleCount} registros`;
         }
 
         function multiFilterMap() {
@@ -372,11 +384,15 @@
             const d = document.querySelector('#filters-map .f-d').value;
             const v = document.querySelector('#filters-map .f-v').value;
             const z = document.querySelector('#filters-map .f-z').value;
-            const i = document.querySelector('#filters-map .f-i').value;
+            const e = document.querySelector('#filters-map .f-e').value;
             
             const filtered = globalData.slice(1).filter(row => {
                 const rowDate = (row[0] || "").split(' ')[0];
-                return (!d || rowDate === d) && row.join(' ').toLowerCase().includes(q) && (!v || row[1] === v) && (!z || row[3] === z) && (!i || row[12] === i);
+                let rowStatus = "prospecto";
+                if(row[16] && row[16].trim() !== "") rowStatus = "venta";
+                else if(row[22] && row[22].toLowerCase().includes("establecido")) rowStatus = "fijo";
+
+                return (!d || rowDate === d) && row.join(' ').toLowerCase().includes(q) && (!v || row[1] === v) && (!z || row[3] === z) && (!e || rowStatus === e);
             });
             renderMap(filtered);
         }
@@ -400,23 +416,26 @@
             document.getElementById('modal-data').innerHTML = `
                 ${mediaHtml}
                 <h2 style="color:var(--primary); margin:0;">${neg} ${venta ? '✅' : (isEst ? '⭐' : '')}</h2>
-                ${isEst ? `<div style="background:var(--established); color:var(--established-border); padding:5px 15px; border-radius:50px; display:inline-block; font-weight:bold; font-size:12px; margin:10px 0;">CLIENTE ESTABLECIDO</div>` : ''}
+                <div style="margin:10px 0;">
+                    ${isEst ? `<span class="badge-status bg-established">CLIENTE FIJO</span>` : ''}
+                    ${venta ? `<span class="badge-status bg-sold">VENTA CERRADA</span>` : ''}
+                </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:13px; margin-top:15px;">
                     <div><b>Vendedor:</b> <span style="color:${colorMap[vend]}; font-weight:bold;">${vend}</span></div>
                     <div><b>Zona:</b> ${zona}</div>
                     <div><b>WhatsApp:</b> ${tel}</div>
-                    <div><b>Unidades:</b> ${unid || 'N/A'}</div>
+                    <div><b>Interés:</b> ${int}</div>
                 </div>
                 <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
-                <p style="font-size:13px;"><b>Giro:</b> ${giro} | <b>Interés:</b> ${int}</p>
+                <p style="font-size:13px;"><b>Giro:</b> ${giro} | <b>Unidades:</b> ${unid || 'N/A'}</p>
                 <div style="background:#f0f4ff; padding:10px; border-radius:8px; font-size:12px;"><b>Observaciones:</b><br>${obs || 'N/A'}</div>
                 
-                <h4 style="margin-top:20px; border-bottom:1px solid #eee; padding-bottom:5px;">Bitácora de Seguimiento</h4>
+                <h4 style="margin-top:20px; border-bottom:1px solid #eee; padding-bottom:5px;">Bitácora de Seguimiento (5 Visitas)</h4>
                 ${visitas || '<p style="font-size:12px; color:#999;">Sin visitas registradas.</p>'}
 
                 <div style="margin-top:20px; display:flex; gap:10px;">
                     <a href="https://wa.me/52${tel.replace(/\D/g,'')}" target="_blank" class="btn-label" style="background:var(--accent); flex:1; text-align:center;">WhatsApp</a>
-                    ${coords ? `<a href="https://www.google.com/maps?q=${coords[0]},${coords[1]}" target="_blank" class="btn-label" style="flex:1; text-align:center;">Ruta GPS</a>` : ''}
+                    ${coords ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${coords[0]},${coords[1]}" target="_blank" class="btn-label" style="flex:1; text-align:center;">Ruta GPS</a>` : ''}
                 </div>
             `;
             document.getElementById('clientModal').style.display = "block";
