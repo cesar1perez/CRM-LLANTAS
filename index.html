@@ -60,7 +60,7 @@
 
         /* FILTROS Y TABLA */
         .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; background: white; padding: 15px; border-radius: 15px; border: 1px solid #ddd; }
-        .filter-row select, .filter-row input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; flex: 1; min-width: 130px; font-size: 12px; }
+        .filter-row select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; flex: 1; min-width: 130px; font-size: 12px; }
         
         .table-container { background: white; padding: 10px; border-radius: 15px; overflow-x: auto; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
@@ -89,6 +89,7 @@
         .tire-box { background: white; padding: 15px; border-radius: 15px; border: 1px solid #ddd; text-align: center; flex: 1; min-width: 150px; }
         .tire-box span { display: block; font-size: 24px; font-weight: 900; color: var(--primary); }
         .tire-box label { font-size: 10px; text-transform: uppercase; font-weight: 800; color: #777; letter-spacing: 1px; }
+        .conv-detail { font-size: 14px; color: var(--text); font-weight: bold; margin-bottom: 2px; display: block; }
     </style>
 </head>
 <body>
@@ -134,7 +135,11 @@
                 <div class="tire-box"><label>Llantas Abril</label><span id="vSum-abr">0</span></div>
                 <div class="tire-box"><label>Llantas Mayo</label><span id="vSum-may">0</span></div>
                 <div class="tire-box" style="background: var(--primary);"><label style="color:white">Total Llantas</label><span id="vSum-total" style="color:white">0</span></div>
-                <div class="tire-box" style="border: 2px solid var(--gold);"><label style="color:var(--gold)">% Conv. Clientes</label><span id="vConv-rate" style="color:var(--gold)">0%</span></div>
+                <div class="tire-box" style="border: 2px solid var(--gold);">
+                    <label style="color:var(--gold)">% Conv. Clientes</label>
+                    <span id="vConv-rate-vals" class="conv-detail">0 / 0</span>
+                    <span id="vConv-rate" style="color:var(--gold); font-size: 20px;">0%</span>
+                </div>
             </div>
             <div class="filter-row" id="filters-ventas"></div>
             <div class="table-container">
@@ -214,6 +219,7 @@
         let globalData = [], markersArray = [], colorMap = {}, charts = [];
         let map;
         const palette = ['#004a99', '#00b4d8', '#25D366', '#ff4444', '#8e44ad', '#f39c12', '#3498db', '#e67e22'];
+        const mesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
         Chart.register(ChartDataLabels);
 
@@ -233,34 +239,42 @@
         Papa.parse(csvUrl, {
             download: true, header: false,
             complete: function(results) {
-                // CORRECCIÓN 1: Filtro estricto para ignorar cabeceras y registros vacíos
-                globalData = results.data.filter(r => r[4] && r[4] !== "NEGOCIO" && r[1] !== "VENDEDOR" && r[4] !== "NOMBRE DEL NEGOCIO");
+                // CORRECCIÓN 1: Eliminar registro del renglón 1 (slice(1) ignora la primera fila de cabeceras)
+                globalData = results.data.slice(1).filter(r => r[4] && r[4].trim() !== "" && r[4] !== "NOMBRE DEL NEGOCIO");
                 processAll();
             }
         });
 
         function processAll() {
-            const sets = { v: new Set(), z: new Set(), g: new Set(), d: new Set() };
+            const sets = { v: new Set(), z: new Set(), g: new Set(), d: new Set(), m: new Set() };
             let st = { vend: {}, zon: {}, gir: {}, int: {}, established: 0 };
 
             globalData.forEach(row => {
-                const v = row[1], z = row[3], g = row[5], i = row[12], e = row[22], d = (row[0]||"").split(' ')[0];
-                if(v && !colorMap[v]) colorMap[v] = palette[Object.keys(colorMap).length % palette.length];
+                const v = row[1], z = row[3], g = row[5], i = row[12], e = row[22], dFull = row[0]||"";
+                const d = dFull.split(' ')[0];
                 
+                // Extraer Mes para el filtro (CORRECCIÓN 3)
+                if(d.includes('/')) {
+                    const parts = d.split('/');
+                    const mesNum = parseInt(parts[1]);
+                    if(!isNaN(mesNum)) sets.m.add(mesNombres[mesNum-1]);
+                }
+
+                if(v && !colorMap[v]) colorMap[v] = palette[Object.keys(colorMap).length % palette.length];
                 if(d) sets.d.add(d); 
                 if(v) sets.v.add(v); 
                 if(z && z.trim() !== "") sets.z.add(z); 
-                // CORRECCIÓN 2: Evitar espacios en blanco en Giro
                 if(g && g.trim() !== "") sets.g.add(g);
 
                 st.vend[v] = (st.vend[v]||0)+1; st.zon[z] = (st.zon[z]||0)+1; st.gir[g] = (st.gir[g]||0)+1; st.int[i] = (st.int[i]||0)+1;
                 if(e && e.toLowerCase().includes("establecido")) st.established++;
             });
 
+            // CORRECCIÓN 2: Quitar filtro Buscar
             const filterTpl = (idPrefix) => `
-                <input type="text" placeholder="🔍 Buscar..." onkeyup="runFilter('${idPrefix}')" id="${idPrefix}-q">
+                <select id="${idPrefix}-m" onchange="runFilter('${idPrefix}')"><option value="">📅 Mes</option>${Array.from(sets.m).sort((a,b)=>mesNombres.indexOf(a)-mesNombres.indexOf(b)).map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
                 <select id="${idPrefix}-v" onchange="runFilter('${idPrefix}')"><option value="">👤 Vendedor</option>${Array.from(sets.v).sort().map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
-                <select id="${idPrefix}-d" onchange="runFilter('${idPrefix}')"><option value="">📅 Fecha</option>${Array.from(sets.d).sort().reverse().map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
+                <select id="${idPrefix}-d" onchange="runFilter('${idPrefix}')"><option value="">📅 Fecha Exacta</option>${Array.from(sets.d).sort().reverse().map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
                 <select id="${idPrefix}-e" onchange="runFilter('${idPrefix}')"><option value="">🏷️ Estado</option><option value="cliente">⭐ Clientes</option><option value="prospecto">📌 Prospectos</option></select>
                 <select id="${idPrefix}-g" onchange="runFilter('${idPrefix}')"><option value="">🛠️ Giro</option>${Array.from(sets.g).sort().map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
                 <select id="${idPrefix}-z" onchange="runFilter('${idPrefix}')"><option value="">📍 Zona</option>${Array.from(sets.z).sort().map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
@@ -325,51 +339,64 @@
         }
 
         function runFilter(prefix) {
-            const q = document.getElementById(prefix+'-q').value.toLowerCase();
+            const m = document.getElementById(prefix+'-m').value;
             const v = document.getElementById(prefix+'-v').value;
             const d = document.getElementById(prefix+'-d').value;
             const e = document.getElementById(prefix+'-e').value;
             const g = document.getElementById(prefix+'-g').value;
             const z = document.getElementById(prefix+'-z').value;
 
+            const filtered = globalData.filter(r => {
+                const isE = r[22] && r[22].toLowerCase().includes("establecido");
+                const state = isE ? 'cliente' : 'prospecto';
+                
+                let matchMes = true;
+                if(m !== "") {
+                    const dStr = r[0].split(' ')[0];
+                    const mesNum = parseInt(dStr.split('/')[1]);
+                    matchMes = mesNombres[mesNum-1] === m;
+                }
+
+                return matchMes && (!v || r[1] === v) && (!d || r[0].includes(d)) && (!e || state === e) && (!g || r[5] === g) && (!z || r[3] === z);
+            });
+
+            if(prefix === 'l') renderTable(filtered);
             if(prefix === 'v') {
-                const rows = document.querySelectorAll('#vtaTableBody tr');
-                rows.forEach((tr, idx) => {
-                    const r = globalData[idx];
+                // Actualizar tabla de ventas específicamente para que los indicadores funcionen
+                const b = document.getElementById('vtaTableBody');
+                b.innerHTML = '';
+                filtered.forEach(r => {
                     const isE = r[22] && r[22].toLowerCase().includes("establecido");
-                    const state = isE ? 'cliente' : 'prospecto';
-                    const match = r.join(' ').toLowerCase().includes(q) && (!v || r[1] === v) && (!d || r[0].includes(d)) && (!e || state === e) && (!g || r[5] === g) && (!z || r[3] === z);
-                    tr.style.display = match ? '' : 'none';
+                    const a = parseFloat(r[24])||0, mVal = parseFloat(r[26])||0;
+                    const tr = document.createElement('tr');
+                    if(isE) tr.className = 'row-established';
+                    tr.onclick = () => openModal(r);
+                    tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td style="font-size:11px; color:#555;">${r[25]||''}</td><td style="text-align:center; background:#e1f5fe;" class="${mVal>0?'vta-positiva':''}">${mVal}</td><td style="font-size:11px; color:#555;">${r[27]||''}</td>`;
+                    b.appendChild(tr);
                 });
-                updateVentaStats(); // CORRECCIÓN 3: Re-calcular al filtrar
-            } else {
-                const filtered = globalData.filter(r => {
-                    const isE = r[22] && r[22].toLowerCase().includes("establecido");
-                    const state = isE ? 'cliente' : 'prospecto';
-                    return r.join(' ').toLowerCase().includes(q) && (!v || r[1] === v) && (!d || r[0].includes(d)) && (!e || state === e) && (!g || r[5] === g) && (!z || r[3] === z);
-                });
-                if(prefix === 'l') renderTable(filtered);
-                if(prefix === 'm') renderMap(filtered);
+                updateVentaStats();
             }
+            if(prefix === 'm') renderMap(filtered);
         }
 
         function updateVentaStats() {
-            let sA = 0, sM = 0, count = 0, estCount = 0;
+            let sA = 0, sM = 0, totalRegistrosVisibles = 0, clientesEstablecidosVisibles = 0;
             document.querySelectorAll('#vtaTableBody tr').forEach(tr => {
-                if(tr.style.display !== 'none') {
-                    // CORRECCIÓN 3: Sumar llantas solo de filas visibles
-                    sA += parseFloat(tr.cells[4].innerText)||0;
-                    sM += parseFloat(tr.cells[6].innerText)||0;
-                    count++;
-                    // CORRECCIÓN 4: Contar clientes establecidos visibles
-                    if(tr.classList.contains('row-established')) estCount++;
-                }
+                sA += parseFloat(tr.cells[4].innerText)||0;
+                sM += parseFloat(tr.cells[6].innerText)||0;
+                totalRegistrosVisibles++;
+                if(tr.classList.contains('row-established')) clientesEstablecidosVisibles++;
             });
+
             document.getElementById('vSum-abr').innerText = sA;
             document.getElementById('vSum-may').innerText = sM;
             document.getElementById('vSum-total').innerText = sA + sM;
-            // CORRECCIÓN 4: % de conversión (Clientes Establecidos / Registros Totales en la vista)
-            document.getElementById('vConv-rate').innerText = count > 0 ? ((estCount/count)*100).toFixed(1) + "%" : "0%";
+            
+            // CORRECCIÓN 4: Mostrar cuenta completa de conversión
+            document.getElementById('vConv-rate-vals').innerText = `${clientesEstablecidosVisibles} / ${totalRegistrosVisibles}`;
+            document.getElementById('vConv-rate').innerText = totalRegistrosVisibles > 0 
+                ? ((clientesEstablecidosVisibles / totalRegistrosVisibles) * 100).toFixed(1) + "%" 
+                : "0%";
         }
 
         function openModal(r) {
