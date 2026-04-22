@@ -64,7 +64,8 @@
         
         .table-container { background: white; padding: 10px; border-radius: 15px; overflow-x: auto; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
-        th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; cursor: pointer; border-bottom: 3px solid var(--secondary); white-space: nowrap; }
+        th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; cursor: pointer; border-bottom: 3px solid var(--secondary); white-space: nowrap; user-select: none; }
+        th:hover { background: #edf2f7; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
         
         .row-established { background-color: var(--established) !important; border-left: 6px solid var(--established-border); }
@@ -143,16 +144,16 @@
             </div>
             <div class="filter-row" id="filters-ventas"></div>
             <div class="table-container">
-                <table>
+                <table id="salesTable">
                     <thead>
                         <tr>
-                            <th>Código</th>
-                            <th>Negocio / Cliente</th>
-                            <th>Vendedor</th>
-                            <th>Estado</th>
-                            <th style="background:#fff3e0; text-align:center;">ABRIL</th>
+                            <th onclick="sortTable(0, 'salesTable')">Código ↕</th>
+                            <th onclick="sortTable(1, 'salesTable')">Negocio / Cliente ↕</th>
+                            <th onclick="sortTable(2, 'salesTable')">Vendedor ↕</th>
+                            <th onclick="sortTable(3, 'salesTable')">Estado ↕</th>
+                            <th onclick="sortTable(4, 'salesTable')" style="background:#fff3e0; text-align:center;">ABRIL ↕</th>
                             <th>Obs. Abril</th>
-                            <th style="background:#e1f5fe; text-align:center;">MAYO</th>
+                            <th onclick="sortTable(6, 'salesTable')" style="background:#e1f5fe; text-align:center;">MAYO ↕</th>
                             <th>Obs. Mayo</th>
                         </tr>
                     </thead>
@@ -184,12 +185,12 @@
                 <table id="mainTable">
                     <thead>
                         <tr>
-                            <th onclick="sortTable(0)">Fecha</th>
-                            <th onclick="sortTable(1)">Vendedor</th>
-                            <th>Negocio</th>
-                            <th>Giro</th>
-                            <th>Zona</th>
-                            <th>Interés</th>
+                            <th onclick="sortTable(0, 'mainTable')">Fecha ↕</th>
+                            <th onclick="sortTable(1, 'mainTable')">Vendedor ↕</th>
+                            <th onclick="sortTable(2, 'mainTable')">Negocio ↕</th>
+                            <th onclick="sortTable(3, 'mainTable')">Giro ↕</th>
+                            <th onclick="sortTable(4, 'mainTable')">Zona ↕</th>
+                            <th onclick="sortTable(5, 'mainTable')">Interés ↕</th>
                             <th>WhatsApp</th>
                         </tr>
                     </thead>
@@ -239,7 +240,7 @@
         Papa.parse(csvUrl, {
             download: true, header: false,
             complete: function(results) {
-                // CORRECCIÓN 1: Eliminar registro del renglón 1 (slice(1) ignora la primera fila de cabeceras)
+                // EXCLUSIÓN DE CABECERAS
                 globalData = results.data.slice(1).filter(r => r[4] && r[4].trim() !== "" && r[4] !== "NOMBRE DEL NEGOCIO");
                 processAll();
             }
@@ -253,7 +254,6 @@
                 const v = row[1], z = row[3], g = row[5], i = row[12], e = row[22], dFull = row[0]||"";
                 const d = dFull.split(' ')[0];
                 
-                // Extraer Mes para el filtro (CORRECCIÓN 3)
                 if(d.includes('/')) {
                     const parts = d.split('/');
                     const mesNum = parseInt(parts[1]);
@@ -270,7 +270,6 @@
                 if(e && e.toLowerCase().includes("establecido")) st.established++;
             });
 
-            // CORRECCIÓN 2: Quitar filtro Buscar
             const filterTpl = (idPrefix) => `
                 <select id="${idPrefix}-m" onchange="runFilter('${idPrefix}')"><option value="">📅 Mes</option>${Array.from(sets.m).sort((a,b)=>mesNombres.indexOf(a)-mesNombres.indexOf(b)).map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
                 <select id="${idPrefix}-v" onchange="runFilter('${idPrefix}')"><option value="">👤 Vendedor</option>${Array.from(sets.v).sort().map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
@@ -349,33 +348,17 @@
             const filtered = globalData.filter(r => {
                 const isE = r[22] && r[22].toLowerCase().includes("establecido");
                 const state = isE ? 'cliente' : 'prospecto';
-                
                 let matchMes = true;
                 if(m !== "") {
                     const dStr = r[0].split(' ')[0];
                     const mesNum = parseInt(dStr.split('/')[1]);
                     matchMes = mesNombres[mesNum-1] === m;
                 }
-
                 return matchMes && (!v || r[1] === v) && (!d || r[0].includes(d)) && (!e || state === e) && (!g || r[5] === g) && (!z || r[3] === z);
             });
 
             if(prefix === 'l') renderTable(filtered);
-            if(prefix === 'v') {
-                // Actualizar tabla de ventas específicamente para que los indicadores funcionen
-                const b = document.getElementById('vtaTableBody');
-                b.innerHTML = '';
-                filtered.forEach(r => {
-                    const isE = r[22] && r[22].toLowerCase().includes("establecido");
-                    const a = parseFloat(r[24])||0, mVal = parseFloat(r[26])||0;
-                    const tr = document.createElement('tr');
-                    if(isE) tr.className = 'row-established';
-                    tr.onclick = () => openModal(r);
-                    tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td style="font-size:11px; color:#555;">${r[25]||''}</td><td style="text-align:center; background:#e1f5fe;" class="${mVal>0?'vta-positiva':''}">${mVal}</td><td style="font-size:11px; color:#555;">${r[27]||''}</td>`;
-                    b.appendChild(tr);
-                });
-                updateVentaStats();
-            }
+            if(prefix === 'v') renderVentas(filtered);
             if(prefix === 'm') renderMap(filtered);
         }
 
@@ -387,16 +370,12 @@
                 totalRegistrosVisibles++;
                 if(tr.classList.contains('row-established')) clientesEstablecidosVisibles++;
             });
-
             document.getElementById('vSum-abr').innerText = sA;
             document.getElementById('vSum-may').innerText = sM;
             document.getElementById('vSum-total').innerText = sA + sM;
-            
-            // CORRECCIÓN 4: Mostrar cuenta completa de conversión
             document.getElementById('vConv-rate-vals').innerText = `${clientesEstablecidosVisibles} / ${totalRegistrosVisibles}`;
             document.getElementById('vConv-rate').innerText = totalRegistrosVisibles > 0 
-                ? ((clientesEstablecidosVisibles / totalRegistrosVisibles) * 100).toFixed(1) + "%" 
-                : "0%";
+                ? ((clientesEstablecidosVisibles / totalRegistrosVisibles) * 100).toFixed(1) + "%" : "0%";
         }
 
         function openModal(r) {
@@ -413,13 +392,11 @@
                     <div><b>Vendedor:</b> <span style="color:${colorMap[r[1]]}; font-weight:800;">${r[1]}</span></div>
                     <div><b>Zona:</b> ${r[3]}</div>
                     <div><b>Giro:</b> ${r[5]}</div>
-                    <div><b>Contacto:</b> ${r[6]}</div>
                     <div><b>WhatsApp:</b> ${r[7]}</div>
                     <div><b>Unidades:</b> ${r[11]||'N/A'}</div>
-                    <div><b>Competencia:</b> ${r[10]||'Ninguna'}</div>
-                    <div><b>Nivel Interés:</b> ${r[12]}</div>
+                    <div><b>Interés:</b> ${r[12]}</div>
                 </div>
-                <div style="margin-top:15px; padding:12px; background:#fff7ed; border-radius:10px; font-size:12px; border:1px solid #ffedd5;"><b>Observaciones Generales:</b><br>${r[13]||'Sin comentarios'}</div>
+                <div style="margin-top:15px; padding:12px; background:#fff7ed; border-radius:10px; font-size:12px; border:1px solid #ffedd5;"><b>Observaciones:</b><br>${r[13]||'Sin comentarios'}</div>
                 <h4 style="margin-top:20px; border-bottom:2px solid var(--secondary); padding-bottom:5px; color:var(--primary)">Bitácora de Visitas</h4>
                 ${vis || '<p style="font-size:12px; color:#999;">Sin visitas registradas.</p>'}
                 <div style="margin-top:25px; display:flex; gap:12px;">
@@ -440,16 +417,45 @@
             charts.push(cfg(document.getElementById('c-int'), st.int));
         }
 
-        function sortTable(n) {
-            const t = document.getElementById("mainTable"); let s = true, dir = "asc", count = 0;
-            while (s) { s = false; let rows = t.rows;
-                for (var i = 1; i < (rows.length - 1); i++) {
-                    var sh = false, x = rows[i].cells[n], y = rows[i + 1].cells[n];
-                    if (dir == "asc") { if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) { sh = true; break; } }
-                    else { if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) { sh = true; break; } }
+        // FUNCIÓN DE ORDENAMIENTO UNIVERSAL ACTUALIZADA
+        function sortTable(n, tableId) {
+            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            table = document.getElementById(tableId);
+            switching = true;
+            dir = "asc";
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    
+                    let xVal = x.innerText.toLowerCase().trim();
+                    let yVal = y.innerText.toLowerCase().trim();
+
+                    // Detectar si es número para ordenar correctamente
+                    let xNum = parseFloat(xVal.replace(/[^0-9.-]+/g,""));
+                    let yNum = parseFloat(yVal.replace(/[^0-9.-]+/g,""));
+
+                    if (!isNaN(xNum) && !isNaN(yNum) && xVal.length < 10) { // El chequeo de length es para no confundir fechas con números
+                        if (dir == "asc") { if (xNum > yNum) { shouldSwitch = true; break; } } 
+                        else { if (xNum < yNum) { shouldSwitch = true; break; } }
+                    } else {
+                        if (dir == "asc") { if (xVal > yVal) { shouldSwitch = true; break; } } 
+                        else { if (xVal < yVal) { shouldSwitch = true; break; } }
+                    }
                 }
-                if (sh) { rows[i].parentNode.insertBefore(rows[i + 1], rows[i]); s = true; count++; }
-                else if (count == 0 && dir == "asc") { dir = "desc"; s = true; }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount ++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
             }
         }
     </script>
