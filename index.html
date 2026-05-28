@@ -141,7 +141,7 @@
 
         /* INDICADORES VENTAS */
         .tires-summary { display: flex; gap: 15px; margin-bottom: 12px; flex-wrap: wrap; }
-        .tire-box { background: white; padding: 15px; border-radius: 15px; border: 1px solid #ddd; text-align: center; flex: 1; min-width: 150px; }
+        .tire-box { background: white; padding: 15px; border-radius: 15px; border: 1px solid #ddd; text-align: center; flex: 1; min-width: 140px; }
         .tire-box span { display: block; font-size: 24px; font-weight: 900; color: var(--primary); }
         .tire-box label { font-size: 10px; text-transform: uppercase; font-weight: 800; color: #777; letter-spacing: 1px; }
         .conv-detail { font-size: 14px; color: var(--text); font-weight: bold; margin-bottom: 2px; display: block; }
@@ -189,6 +189,7 @@
             <div class="tires-summary">
                 <div class="tire-box"><label>Llantas Abril</label><span id="vSum-abr">0</span></div>
                 <div class="tire-box"><label>Llantas Mayo</label><span id="vSum-may">0</span></div>
+                <div class="tire-box" style="border: 1px solid var(--secondary);"><label style="color:var(--secondary)">Llantas Junio</label><span id="vSum-jun" style="color:var(--secondary)">0</span></div>
                 <div class="tire-box" style="background: var(--primary);"><label style="color:white">Total Llantas</label><span id="vSum-total" style="color:white">0</span></div>
                 <div class="tire-box" style="border: 2px solid var(--gold);">
                     <label style="color:var(--gold)">% Conv. Clientes</label>
@@ -209,6 +210,8 @@
                             <th>Obs. Abril</th>
                             <th onclick="sortTable(6, 'salesTable')" style="background:#e1f5fe; text-align:center;">MAYO ↕</th>
                             <th>Obs. Mayo</th>
+                            <th onclick="sortTable(8, 'salesTable')" style="background:#e8f5e9; text-align:center;">JUNIO ↕</th>
+                            <th>Obs. Junio</th>
                         </tr>
                     </thead>
                     <tbody id="vtaTableBody"></tbody>
@@ -391,12 +394,12 @@
             const b = document.getElementById('vtaTableBody'); b.innerHTML = '';
             data.forEach(r => {
                 const isE = r[22] && r[22].toLowerCase().includes("establecido");
-                const a = parseFloat(r[24])||0, m = parseFloat(r[26])||0;
+                const a = parseFloat(r[24])||0, m = parseFloat(r[26])||0, j = parseFloat(r[28])||0;
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer'; 
                 if(isE) tr.className = 'row-established';
                 tr.onclick = () => openModal(r);
-                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td style="font-size:11px; color:#555;">${r[25]||''}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td style="font-size:11px; color:#555;">${r[27]||''}</td>`;
+                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td style="font-size:11px; color:#555;">${r[25]||''}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td style="font-size:11px; color:#555;">${r[27]||''}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td style="font-size:11px; color:#555;">${r[29]||''}</td>`;
                 b.appendChild(tr);
             });
             updateVentaStats();
@@ -410,8 +413,8 @@
                 if(c) {
                     const m = L.circleMarker(c, { 
                         radius: 10, 
-                        fillColor: colorMap[r[1]], // Color del vendedor
-                        color: isE ? '#f39c12' : '#fff', // Borde dorado si es cliente
+                        fillColor: colorMap[r[1]], 
+                        color: isE ? '#f39c12' : '#fff', 
                         weight: isE ? 4 : 2, 
                         fillOpacity: 0.9 
                     }).addTo(map);
@@ -455,16 +458,18 @@
         }
 
         function updateVentaStats() {
-            let sA = 0, sM = 0, totalRegistrosVisibles = 0, clientesEstablecidosVisibles = 0;
+            let sA = 0, sM = 0, sJ = 0, totalRegistrosVisibles = 0, clientesEstablecidosVisibles = 0;
             document.querySelectorAll('#vtaTableBody tr').forEach(tr => {
                 sA += parseFloat(tr.cells[4].innerText)||0;
                 sM += parseFloat(tr.cells[6].innerText)||0;
+                sJ += parseFloat(tr.cells[8].innerText)||0;
                 totalRegistrosVisibles++;
                 if(tr.classList.contains('row-established')) clientesEstablecidosVisibles++;
             });
             document.getElementById('vSum-abr').innerText = sA;
             document.getElementById('vSum-may').innerText = sM;
-            document.getElementById('vSum-total').innerText = sA + sM;
+            document.getElementById('vSum-jun').innerText = sJ;
+            document.getElementById('vSum-total').innerText = sA + sM + sJ;
             document.getElementById('vConv-rate-vals').innerText = `${clientesEstablecidosVisibles} / ${totalRegistrosVisibles}`;
             document.getElementById('vConv-rate').innerText = totalRegistrosVisibles > 0 
                 ? ((clientesEstablecidosVisibles / totalRegistrosVisibles) * 100).toFixed(1) + "%" : "0%";
@@ -493,7 +498,7 @@
                 ${vis || '<p style="font-size:12px; color:#999;">Sin visitas registradas.</p>'}
                 <div style="margin-top:25px; display:flex; gap:12px;">
                     <a href="https://wa.me/52${r[7].replace(/\D/g,'')}" target="_blank" class="btn-label" style="background:var(--accent); flex:1; text-align:center; padding:15px;">ENVIAR WHATSAPP</a>
-                    ${c ? `<a href="https://www.google.com/maps?q=${c[0]},${c[1]}" target="_blank" class="btn-label" style="background:var(--secondary); flex:1; text-align:center; padding:15px;">ABRIR GPS</a>` : ''}
+                    ${c ? `<a href="https://www.google.com/maps/search/?api=1&query=${c[0]},${c[1]}" target="_blank" class="btn-label" style="background:var(--secondary); flex:1; text-align:center; padding:15px;">ABRIR GPS</a>` : ''}
                 </div>
             `;
             document.getElementById('clientModal').style.display = "block";
@@ -512,27 +517,47 @@
         function sortTable(n, tableId) {
             var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
             table = document.getElementById(tableId);
-            switching = true; dir = "asc";
+            switching = true;
+            dir = "asc";
             while (switching) {
-                switching = false; rows = table.rows;
+                switching = false;
+                rows = table.rows;
                 for (i = 1; i < (rows.length - 1); i++) {
                     shouldSwitch = false;
                     x = rows[i].getElementsByTagName("TD")[n];
                     y = rows[i + 1].getElementsByTagName("TD")[n];
-                    let xVal = x.innerText.toLowerCase().trim();
-                    let yVal = y.innerText.toLowerCase().trim();
-                    let xNum = parseFloat(xVal.replace(/[^0-9.-]+/g,""));
-                    let yNum = parseFloat(yVal.replace(/[^0-9.-]+/g,""));
-                    if (!isNaN(xNum) && !isNaN(yNum) && xVal.length < 10) {
-                        if (dir == "asc") { if (xNum > yNum) { shouldSwitch = true; break; } } 
-                        else { if (xNum < yNum) { shouldSwitch = true; break; } }
-                    } else {
-                        if (dir == "asc") { if (xVal > yVal) { shouldSwitch = true; break; } } 
-                        else { if (xVal < yVal) { shouldSwitch = true; break; } }
+                    if (x && y) {
+                        var xContent = x.textContent || x.innerText;
+                        var yContent = y.textContent || y.innerText;
+                        
+                        var xNum = parseFloat(xContent.replace(/[^0-9.-]/g, ''));
+                        var yNum = parseFloat(yContent.replace(/[^0-9.-]/g, ''));
+                        
+                        if (!isNaN(xNum) && !isNaN(yNum)) {
+                            if (dir == "asc") {
+                                if (xNum > yNum) { shouldSwitch = true; break; }
+                            } else if (dir == "desc") {
+                                if (xNum < yNum) { shouldSwitch = true; break; }
+                            }
+                        } else {
+                            if (dir == "asc") {
+                                if (xContent.toLowerCase() > yContent.toLowerCase()) { shouldSwitch = true; break; }
+                            } else if (dir == "desc") {
+                                if (xContent.toLowerCase() < yContent.toLowerCase()) { shouldSwitch = true; break; }
+                            }
+                        }
                     }
                 }
-                if (shouldSwitch) { rows[i].parentNode.insertBefore(rows[i + 1], rows[i]); switching = true; switchcount ++; } 
-                else { if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; } }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
             }
         }
     </script>
