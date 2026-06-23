@@ -487,7 +487,7 @@
 
         function renderVentas(data) {
             const b = document.getElementById('vtaTableBody'); b.innerHTML = '';
-            data.forEach(r => {
+            data.forEach((r, idxFila) => {
                 const isE = r[22] && r[22].toLowerCase().includes("establecido");
                 const a = parseFloat(r[24])||0, m = parseFloat(r[26])||0, j = parseFloat(r[28])||0;
                 const tr = document.createElement('tr');
@@ -503,9 +503,10 @@
                     const obs = textoObs || '';
                     const claseVacio = obs ? '' : 'vacio';
                     const textoMostrar = obs ? obs : 'Sin observación';
+                    const spanId = 'obs-span-' + mes + '-' + idxFila;
                     return `<div class="obs-cell">
-                        <span class="obs-cell-text ${claseVacio}" title="${escAttr(obs)}">${textoMostrar}</span>
-                        <button class="btn-edit-obs" onclick="event.stopPropagation(); abrirObsModal('${escAttr(vendedor)}','${escAttr(negocio)}','${mes}','${escAttr(obs)}')">✏️</button>
+                        <span class="obs-cell-text ${claseVacio}" id="${spanId}" title="${escAttr(obs)}">${textoMostrar}</span>
+                        <button class="btn-edit-obs" onclick="event.stopPropagation(); abrirObsModal('${escAttr(vendedor)}','${escAttr(negocio)}','${mes}','${escAttr(obs)}','${spanId}')">✏️</button>
                     </div>`;
                 };
 
@@ -679,16 +680,16 @@
         // ====== NUEVO: LÓGICA DEL MODAL DE OBSERVACIONES MENSUALES ======
         // ============================================================
 
-        // Guarda el contexto actual (vendedor, negocio, mes) mientras el modal está abierto
-        let obsContexto = { vendedor: '', negocio: '', mes: '', fechaVisita: null };
+        // Guarda el contexto actual (vendedor, negocio, mes, y la celda exacta a actualizar) mientras el modal está abierto
+        let obsContexto = { vendedor: '', negocio: '', mes: '', fechaVisita: null, spanId: null };
 
         // Escapa comillas simples para poder meter el texto dentro de un atributo onclick="..."
         function escAttr(texto) {
             return (texto || '').toString().replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
         }
 
-        function abrirObsModal(vendedor, negocio, mes, observacionActual) {
-            obsContexto = { vendedor, negocio, mes, fechaVisita: null };
+        function abrirObsModal(vendedor, negocio, mes, observacionActual, spanId) {
+            obsContexto = { vendedor, negocio, mes, fechaVisita: null, spanId };
 
             document.getElementById('obs-negocio-label').innerText = negocio;
             document.getElementById('obs-mes-label').innerText = `Vendedor: ${vendedor}  ·  Mes: ${mes}`;
@@ -746,6 +747,29 @@
                 if (data.ok) {
                     mostrarEstadoObs('ok', '✅ ' + (data.mensaje || 'Guardado correctamente.'));
                     document.getElementById('obs-btn-guardar').disabled = false;
+
+                    // ====== NUEVO: refleja el texto guardado directo en la celda de la tabla, sin recargar ======
+                    if (obsContexto.spanId) {
+                        const span = document.getElementById(obsContexto.spanId);
+                        if (span) {
+                            span.innerText = texto;
+                            span.title = texto;
+                            span.classList.remove('vacio');
+                        }
+                    }
+
+                    // También actualizamos el dato en memoria (globalData) para que filtros y reordenamientos
+                    // sigan mostrando el texto correcto sin tener que recargar el CSV.
+                    const colObsPorMes = { 'ABRIL': 25, 'MAYO': 27, 'JUNIO': 29 };
+                    const colObs = colObsPorMes[obsContexto.mes];
+                    if (colObs !== undefined) {
+                        const filaEnMemoria = globalData.find(r =>
+                            (r[1] || '').toString().trim().toLowerCase() === obsContexto.vendedor.toLowerCase() &&
+                            (r[4] || '').toString().trim().toLowerCase() === obsContexto.negocio.toLowerCase()
+                        );
+                        if (filaEnMemoria) filaEnMemoria[colObs] = texto;
+                    }
+
                     // Cerramos el modal después de un breve momento para que el vendedor vea la confirmación
                     setTimeout(() => { closeObsModal(); }, 1200);
                 } else if (data.requiereDesambiguar) {
