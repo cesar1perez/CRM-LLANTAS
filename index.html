@@ -145,6 +145,46 @@
         .tire-box span { display: block; font-size: 24px; font-weight: 900; color: var(--primary); }
         .tire-box label { font-size: 10px; text-transform: uppercase; font-weight: 800; color: #777; letter-spacing: 1px; }
         .conv-detail { font-size: 14px; color: var(--text); font-weight: bold; margin-bottom: 2px; display: block; }
+
+        /* ====== NUEVO: BOTÓN EDITAR OBSERVACIÓN ====== */
+        .btn-edit-obs {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 9px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .btn-edit-obs:hover { background: var(--primary); }
+
+        /* ====== NUEVO: MODAL DE OBSERVACIÓN ====== */
+        #obsModal .modal-content { max-width: 480px; }
+        #obsModal textarea {
+            width: 100%;
+            min-height: 110px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            padding: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        #obsModal label { font-size: 12px; font-weight: 800; color: var(--primary); text-transform: uppercase; display: block; margin: 12px 0 5px; }
+        #obsModal select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 13px; }
+        #obsModal .obs-meta { font-size: 12px; color: #777; margin-top: 4px; }
+        #obsModal .obs-status { font-size: 13px; margin-top: 12px; padding: 10px; border-radius: 8px; display: none; }
+        #obsModal .obs-status.show { display: block; }
+        #obsModal .obs-status.ok { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        #obsModal .obs-status.err { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        #obsModal .obs-status.loading { background: #fff3cd; color: #7a5b00; border: 1px solid #ffe69c; }
+        #obsModal .btn-guardar-obs {
+            background: var(--accent); color: white; border: none; padding: 12px 20px;
+            border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 14px; font-size: 14px;
+        }
+        #obsModal .btn-guardar-obs:disabled { opacity: 0.6; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -279,8 +319,37 @@
         <div class="modal-content"><span class="close-btn" onclick="closeModal()">×</span><div id="modal-data"></div></div>
     </div>
 
+    <!-- ====== NUEVO: MODAL PARA ESCRIBIR/EDITAR OBSERVACIÓN MENSUAL ====== -->
+    <div id="obsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeObsModal()">×</span>
+            <h3 style="color:var(--primary); margin-top:0;">Observación del mes</h3>
+            <div style="font-size:13px; color:#555;">
+                <b id="obs-negocio-label">--</b><br>
+                <span id="obs-mes-label" style="font-size:12px; color:#999;"></span>
+            </div>
+
+            <div id="obs-desambiguar" style="display:none;">
+                <label>Se encontraron varias visitas con este negocio y vendedor. Elige la fecha correcta:</label>
+                <select id="obs-select-fecha"></select>
+            </div>
+
+            <label>Tu observación:</label>
+            <textarea id="obs-textarea" placeholder="Ej: No compró porque le faltaba la medida 175/70R13, se le ofrecerá la próxima visita..."></textarea>
+            <div class="obs-meta">Se guardará con tu nombre de vendedor y la fecha/hora actual.</div>
+
+            <div id="obs-status" class="obs-status"></div>
+
+            <button class="btn-guardar-obs" id="obs-btn-guardar" onclick="guardarObservacionWeb()">💾 Guardar observación</button>
+        </div>
+    </div>
+
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-VTTO816SWHrV1zM7ipVS6PNKoI8QBrBmvVTeR7xij0HvXvhrxDGOP1QH-t9MVe7IhFvlfkLUddhN/pub?output=csv';
+
+        // ====== NUEVO: URL del Apps Script publicado (Web App) ======
+        const APPSCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdPlz1ZeFwq-20DblBsZgdEm8_dZJt65Jk-DJQemNNSvLPCGjjzqdkqj1Xv52-BmYN/exec';
+
         let globalData = [], markersArray = [], colorMap = {}, charts = [];
         let map;
         const palette = ['#004a99', '#f39c12', '#25D366', '#ff4444', '#8e44ad', '#00b4d8', '#3498db', '#e67e22'];
@@ -399,7 +468,15 @@
                 tr.style.cursor = 'pointer'; 
                 if(isE) tr.className = 'row-established';
                 tr.onclick = () => openModal(r);
-                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td style="font-size:11px; color:#555;">${r[25]||''}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td style="font-size:11px; color:#555;">${r[27]||''}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td style="font-size:11px; color:#555;">${r[29]||''}</td>`;
+
+                // ====== NUEVO: helper para generar el botón editar sin disparar el click de la fila (stopPropagation) ======
+                const negocio = (r[4] || '').toString();
+                const vendedor = (r[1] || '').toString();
+                const btnObsAbril = `<button class="btn-edit-obs" onclick="event.stopPropagation(); abrirObsModal('${escAttr(vendedor)}','${escAttr(negocio)}','ABRIL','${escAttr(r[25]||'')}')">✏️</button>`;
+                const btnObsMayo  = `<button class="btn-edit-obs" onclick="event.stopPropagation(); abrirObsModal('${escAttr(vendedor)}','${escAttr(negocio)}','MAYO','${escAttr(r[27]||'')}')">✏️</button>`;
+                const btnObsJunio = `<button class="btn-edit-obs" onclick="event.stopPropagation(); abrirObsModal('${escAttr(vendedor)}','${escAttr(negocio)}','JUNIO','${escAttr(r[29]||'')}')">✏️</button>`;
+
+                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td style="font-size:11px; color:#555;">${r[25]||''} ${btnObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td style="font-size:11px; color:#555;">${r[27]||''} ${btnObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td style="font-size:11px; color:#555;">${r[29]||''} ${btnObsJunio}</td>`;
                 b.appendChild(tr);
             });
             updateVentaStats();
@@ -558,6 +635,96 @@
                         switching = true;
                     }
                 }
+            }
+        }
+
+        // ============================================================
+        // ====== NUEVO: LÓGICA DEL MODAL DE OBSERVACIONES MENSUALES ======
+        // ============================================================
+
+        // Guarda el contexto actual (vendedor, negocio, mes) mientras el modal está abierto
+        let obsContexto = { vendedor: '', negocio: '', mes: '', fechaVisita: null };
+
+        // Escapa comillas simples para poder meter el texto dentro de un atributo onclick="..."
+        function escAttr(texto) {
+            return (texto || '').toString().replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
+        }
+
+        function abrirObsModal(vendedor, negocio, mes, observacionActual) {
+            obsContexto = { vendedor, negocio, mes, fechaVisita: null };
+
+            document.getElementById('obs-negocio-label').innerText = negocio;
+            document.getElementById('obs-mes-label').innerText = `Vendedor: ${vendedor}  ·  Mes: ${mes}`;
+            document.getElementById('obs-textarea').value = observacionActual || '';
+            document.getElementById('obs-desambiguar').style.display = 'none';
+            document.getElementById('obs-status').className = 'obs-status';
+            document.getElementById('obs-status').innerText = '';
+            document.getElementById('obs-btn-guardar').disabled = false;
+
+            document.getElementById('obsModal').style.display = 'block';
+        }
+
+        function closeObsModal() {
+            document.getElementById('obsModal').style.display = 'none';
+        }
+
+        function mostrarEstadoObs(tipo, texto) {
+            const el = document.getElementById('obs-status');
+            el.className = 'obs-status show ' + tipo; // tipo: 'ok' | 'err' | 'loading'
+            el.innerText = texto;
+        }
+
+        async function guardarObservacionWeb() {
+            const texto = document.getElementById('obs-textarea').value.trim();
+            if (!texto) {
+                mostrarEstadoObs('err', 'Escribe una observación antes de guardar.');
+                return;
+            }
+
+            // Si ya se mostró el selector de desambiguación, tomamos la fecha elegida
+            const selectFecha = document.getElementById('obs-select-fecha');
+            const desambiguarVisible = document.getElementById('obs-desambiguar').style.display !== 'none';
+            if (desambiguarVisible) {
+                obsContexto.fechaVisita = selectFecha.value;
+            }
+
+            document.getElementById('obs-btn-guardar').disabled = true;
+            mostrarEstadoObs('loading', 'Guardando observación...');
+
+            try {
+                const resp = await fetch(APPSCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' }, // text/plain evita preflight CORS con Apps Script
+                    body: JSON.stringify({
+                        accion: 'guardar',
+                        vendedor: obsContexto.vendedor,
+                        negocio: obsContexto.negocio,
+                        mes: obsContexto.mes,
+                        observacion: texto,
+                        fechaVisita: obsContexto.fechaVisita
+                    })
+                });
+                const data = await resp.json();
+
+                if (data.ok) {
+                    mostrarEstadoObs('ok', '✅ ' + (data.mensaje || 'Guardado correctamente.'));
+                    document.getElementById('obs-btn-guardar').disabled = false;
+                    // Cerramos el modal después de un breve momento para que el vendedor vea la confirmación
+                    setTimeout(() => { closeObsModal(); }, 1200);
+                } else if (data.requiereDesambiguar) {
+                    // Hay clientes duplicados: mostramos el selector de fechas y NO cerramos el modal
+                    const sel = document.getElementById('obs-select-fecha');
+                    sel.innerHTML = data.opciones.map(f => `<option value="${f}">${f}</option>`).join('');
+                    document.getElementById('obs-desambiguar').style.display = 'block';
+                    mostrarEstadoObs('err', data.error || 'Elige la fecha de visita correcta y guarda de nuevo.');
+                    document.getElementById('obs-btn-guardar').disabled = false;
+                } else {
+                    mostrarEstadoObs('err', '❌ ' + (data.error || 'No se pudo guardar.'));
+                    document.getElementById('obs-btn-guardar').disabled = false;
+                }
+            } catch (err) {
+                mostrarEstadoObs('err', '❌ Error de conexión: ' + err.message);
+                document.getElementById('obs-btn-guardar').disabled = false;
             }
         }
     </script>
