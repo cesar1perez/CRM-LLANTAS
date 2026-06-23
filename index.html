@@ -67,6 +67,7 @@
         th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; cursor: pointer; border-bottom: 3px solid var(--secondary); white-space: nowrap; user-select: none; }
         th:hover { background: #edf2f7; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
+        #salesTable td:nth-child(6), #salesTable td:nth-child(8), #salesTable td:nth-child(10) { padding: 6px 10px; }
         
         .row-established { background-color: var(--established) !important; border-left: 6px solid var(--established-border); }
         .badge-status { padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; margin-left: 5px; color: white; text-transform: uppercase; }
@@ -147,18 +148,43 @@
         .conv-detail { font-size: 14px; color: var(--text); font-weight: bold; margin-bottom: 2px; display: block; }
 
         /* ====== NUEVO: BOTÓN EDITAR OBSERVACIÓN ====== */
+        .obs-cell {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-width: 160px;
+            max-width: 220px;
+        }
+        .obs-cell-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 11px;
+            color: #555;
+        }
+        .obs-cell-text.vacio {
+            color: #bbb;
+            font-style: italic;
+        }
         .btn-edit-obs {
             background: var(--secondary);
             color: white;
             border: none;
             border-radius: 6px;
-            padding: 4px 9px;
+            width: 26px;
+            height: 26px;
+            min-width: 26px;
             font-size: 12px;
             cursor: pointer;
-            margin-left: 6px;
-            vertical-align: middle;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: 0.2s;
         }
-        .btn-edit-obs:hover { background: var(--primary); }
+        .btn-edit-obs:hover { background: var(--primary); transform: scale(1.08); }
 
         /* ====== NUEVO: MODAL DE OBSERVACIÓN ====== */
         #obsModal .modal-content { max-width: 480px; }
@@ -469,14 +495,25 @@
                 if(isE) tr.className = 'row-established';
                 tr.onclick = () => openModal(r);
 
-                // ====== NUEVO: helper para generar el botón editar sin disparar el click de la fila (stopPropagation) ======
+                // ====== NUEVO: helper para generar la celda de observación ordenada (texto truncado + botón fijo) ======
                 const negocio = (r[4] || '').toString();
                 const vendedor = (r[1] || '').toString();
-                const btnObsAbril = `<button class="btn-edit-obs" onclick="event.stopPropagation(); abrirObsModal('${escAttr(vendedor)}','${escAttr(negocio)}','ABRIL','${escAttr(r[25]||'')}')">✏️</button>`;
-                const btnObsMayo  = `<button class="btn-edit-obs" onclick="event.stopPropagation(); abrirObsModal('${escAttr(vendedor)}','${escAttr(negocio)}','MAYO','${escAttr(r[27]||'')}')">✏️</button>`;
-                const btnObsJunio = `<button class="btn-edit-obs" onclick="event.stopPropagation(); abrirObsModal('${escAttr(vendedor)}','${escAttr(negocio)}','JUNIO','${escAttr(r[29]||'')}')">✏️</button>`;
 
-                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td style="font-size:11px; color:#555;">${r[25]||''} ${btnObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td style="font-size:11px; color:#555;">${r[27]||''} ${btnObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td style="font-size:11px; color:#555;">${r[29]||''} ${btnObsJunio}</td>`;
+                const celdaObs = (textoObs, mes) => {
+                    const obs = textoObs || '';
+                    const claseVacio = obs ? '' : 'vacio';
+                    const textoMostrar = obs ? obs : 'Sin observación';
+                    return `<div class="obs-cell">
+                        <span class="obs-cell-text ${claseVacio}" title="${escAttr(obs)}">${textoMostrar}</span>
+                        <button class="btn-edit-obs" onclick="event.stopPropagation(); abrirObsModal('${escAttr(vendedor)}','${escAttr(negocio)}','${mes}','${escAttr(obs)}')">✏️</button>
+                    </div>`;
+                };
+
+                const celdaObsAbril = celdaObs(r[25], 'ABRIL');
+                const celdaObsMayo = celdaObs(r[27], 'MAYO');
+                const celdaObsJunio = celdaObs(r[29], 'JUNIO');
+
+                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td>${celdaObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td>${celdaObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td>${celdaObsJunio}</td>`;
                 b.appendChild(tr);
             });
             updateVentaStats();
