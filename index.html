@@ -64,10 +64,11 @@
         
         .table-container { background: white; padding: 10px; border-radius: 15px; overflow-x: auto; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
+        #salesTable { min-width: 1350px; }
         th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; cursor: pointer; border-bottom: 3px solid var(--secondary); white-space: nowrap; user-select: none; }
         th:hover { background: #edf2f7; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
-        #salesTable td:nth-child(6), #salesTable td:nth-child(8), #salesTable td:nth-child(10) { padding: 6px 10px; }
+        #salesTable td:nth-child(6), #salesTable td:nth-child(8), #salesTable td:nth-child(10), #salesTable td:nth-child(12) { padding: 6px 10px; }
         
         .row-established { background-color: var(--established) !important; border-left: 6px solid var(--established-border); }
         .badge-status { padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; margin-left: 5px; color: white; text-transform: uppercase; }
@@ -255,7 +256,8 @@
             <div class="tires-summary">
                 <div class="tire-box"><label>Llantas Abril</label><span id="vSum-abr">0</span></div>
                 <div class="tire-box"><label>Llantas Mayo</label><span id="vSum-may">0</span></div>
-                <div class="tire-box" style="border: 1px solid var(--secondary);"><label style="color:var(--secondary)">Llantas Junio</label><span id="vSum-jun" style="color:var(--secondary)">0</span></div>
+                <div class="tire-box"><label>Llantas Junio</label><span id="vSum-jun">0</span></div>
+                <div class="tire-box" style="border: 1px solid var(--secondary);"><label style="color:var(--secondary)">Llantas Julio</label><span id="vSum-jul" style="color:var(--secondary)">0</span></div>
                 <div class="tire-box" style="background: var(--primary);"><label style="color:white">Total Llantas</label><span id="vSum-total" style="color:white">0</span></div>
                 <div class="tire-box" style="border: 2px solid var(--gold);">
                     <label style="color:var(--gold)">% Conv. Clientes</label>
@@ -278,6 +280,8 @@
                             <th>Obs. Mayo</th>
                             <th onclick="sortTable(8, 'salesTable')" style="background:#e8f5e9; text-align:center;">JUNIO ↕</th>
                             <th>Obs. Junio</th>
+                            <th onclick="sortTable(10, 'salesTable')" style="background:#f3e8ff; text-align:center;">JULIO ↕</th>
+                            <th>Obs. Julio</th>
                         </tr>
                     </thead>
                     <tbody id="vtaTableBody"></tbody>
@@ -489,7 +493,7 @@
             const b = document.getElementById('vtaTableBody'); b.innerHTML = '';
             data.forEach((r, idxFila) => {
                 const isE = r[22] && r[22].toLowerCase().includes("establecido");
-                const a = parseFloat(r[24])||0, m = parseFloat(r[26])||0, j = parseFloat(r[28])||0;
+                const a = parseFloat(r[24])||0, m = parseFloat(r[26])||0, j = parseFloat(r[28])||0, jl = parseFloat(r[30])||0;
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer'; 
                 if(isE) tr.className = 'row-established';
@@ -513,8 +517,9 @@
                 const celdaObsAbril = celdaObs(r[25], 'ABRIL');
                 const celdaObsMayo = celdaObs(r[27], 'MAYO');
                 const celdaObsJunio = celdaObs(r[29], 'JUNIO');
+                const celdaObsJulio = celdaObs(r[31], 'JULIO');
 
-                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td>${celdaObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td>${celdaObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td>${celdaObsJunio}</td>`;
+                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td>${celdaObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td>${celdaObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td>${celdaObsJunio}</td><td style="text-align:center; background:#f3e8ff;" class="${jl>0?'vta-positiva':''}">${jl}</td><td>${celdaObsJulio}</td>`;
                 b.appendChild(tr);
             });
             updateVentaStats();
@@ -573,18 +578,20 @@
         }
 
         function updateVentaStats() {
-            let sA = 0, sM = 0, sJ = 0, totalRegistrosVisibles = 0, clientesEstablecidosVisibles = 0;
+            let sA = 0, sM = 0, sJ = 0, sJl = 0, totalRegistrosVisibles = 0, clientesEstablecidosVisibles = 0;
             document.querySelectorAll('#vtaTableBody tr').forEach(tr => {
                 sA += parseFloat(tr.cells[4].innerText)||0;
                 sM += parseFloat(tr.cells[6].innerText)||0;
                 sJ += parseFloat(tr.cells[8].innerText)||0;
+                sJl += parseFloat(tr.cells[10].innerText)||0;
                 totalRegistrosVisibles++;
                 if(tr.classList.contains('row-established')) clientesEstablecidosVisibles++;
             });
             document.getElementById('vSum-abr').innerText = sA;
             document.getElementById('vSum-may').innerText = sM;
             document.getElementById('vSum-jun').innerText = sJ;
-            document.getElementById('vSum-total').innerText = sA + sM + sJ;
+            document.getElementById('vSum-jul').innerText = sJl;
+            document.getElementById('vSum-total').innerText = sA + sM + sJ + sJl;
             document.getElementById('vConv-rate-vals').innerText = `${clientesEstablecidosVisibles} / ${totalRegistrosVisibles}`;
             document.getElementById('vConv-rate').innerText = totalRegistrosVisibles > 0 
                 ? ((clientesEstablecidosVisibles / totalRegistrosVisibles) * 100).toFixed(1) + "%" : "0%";
@@ -760,7 +767,7 @@
 
                     // También actualizamos el dato en memoria (globalData) para que filtros y reordenamientos
                     // sigan mostrando el texto correcto sin tener que recargar el CSV.
-                    const colObsPorMes = { 'ABRIL': 25, 'MAYO': 27, 'JUNIO': 29 };
+                    const colObsPorMes = { 'ABRIL': 25, 'MAYO': 27, 'JUNIO': 29, 'JULIO': 31 };
                     const colObs = colObsPorMes[obsContexto.mes];
                     if (colObs !== undefined) {
                         const filaEnMemoria = globalData.find(r =>
