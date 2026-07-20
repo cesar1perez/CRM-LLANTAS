@@ -419,6 +419,20 @@
         function parseCoords(i) { if(!i) return null; let m = i.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/); return m ? [parseFloat(m[1]), parseFloat(m[2])] : null; }
         function getImg(u) { if(!u || u.length < 10) return ''; if(u.includes('id=')) return `https://drive.google.com/thumbnail?id=${u.split('id=')[1].split('&')[0]}&sz=w1000`; return u; }
 
+        // ====== NUEVO: helper único para interpretar la columna W (Cliente establecido / Asignación) ======
+        // Regla:
+        // - "establecido" (case-insensitive) => cliente establecido, badge "CLIENTE", resalta en azul (compatibilidad histórica)
+        // - Cualquier otro texto => se muestra literal como badge, resalta en azul
+        // - Vacío => prospecto normal, sin resaltar
+        function getEstadoCliente(r) {
+            const raw = (r[22] || '').toString().trim();
+            if (!raw) return { resaltar: false, badgeTexto: 'PROSPECTO', esCliente: false };
+            if (raw.toLowerCase().includes('establecido')) {
+                return { resaltar: true, badgeTexto: 'CLIENTE', esCliente: true };
+            }
+            return { resaltar: true, badgeTexto: raw, esCliente: false };
+        }
+
         map = L.map('map').setView([20.0842, -98.3672], 12);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
 
@@ -451,7 +465,7 @@
                 if(g && g.trim() !== "") sets.g.add(g);
 
                 st.vend[v] = (st.vend[v]||0)+1; st.zon[z] = (st.zon[z]||0)+1; st.gir[g] = (st.gir[g]||0)+1; st.int[i] = (st.int[i]||0)+1;
-                if(e && e.toLowerCase().includes("establecido")) st.established++;
+                if(e && e.trim() !== "") st.established++;
             });
 
             const filterTpl = (idPrefix) => `
@@ -480,11 +494,12 @@
         function renderTable(data) {
             const b = document.getElementById('tableBody'); b.innerHTML = '';
             data.forEach(r => {
-                const isE = r[22] && r[22].toLowerCase().includes("establecido");
+                const est = getEstadoCliente(r);
                 const tr = document.createElement('tr');
-                if(isE) tr.className = 'row-established';
+                if(est.resaltar) tr.className = 'row-established';
                 tr.onclick = () => openModal(r);
-                tr.innerHTML = `<td>${r[0]}</td><td style="color:${colorMap[r[1]]}; font-weight:800;">${r[1]}</td><td><b>${r[4]}</b> ${isE?'<span class="badge-status bg-established">CLIENTE</span>':''}</td><td>${r[5]}</td><td>${r[3]}</td><td>${r[12]}</td><td><a href="https://wa.me/52${r[7].replace(/\D/g,'')}" target="_blank" style="padding:5px 10px; background:var(--accent); color:white; border-radius:6px; text-decoration:none; font-size:11px; font-weight:bold;">WA</a></td>`;
+                const badge = est.resaltar ? `<span class="badge-status bg-established">${est.badgeTexto}</span>` : '';
+                tr.innerHTML = `<td>${r[0]}</td><td style="color:${colorMap[r[1]]}; font-weight:800;">${r[1]}</td><td><b>${r[4]}</b> ${badge}</td><td>${r[5]}</td><td>${r[3]}</td><td>${r[12]}</td><td><a href="https://wa.me/52${r[7].replace(/\D/g,'')}" target="_blank" style="padding:5px 10px; background:var(--accent); color:white; border-radius:6px; text-decoration:none; font-size:11px; font-weight:bold;">WA</a></td>`;
                 b.appendChild(tr);
             });
         }
@@ -492,11 +507,11 @@
         function renderVentas(data) {
             const b = document.getElementById('vtaTableBody'); b.innerHTML = '';
             data.forEach((r, idxFila) => {
-                const isE = r[22] && r[22].toLowerCase().includes("establecido");
+                const est = getEstadoCliente(r);
                 const a = parseFloat(r[24])||0, m = parseFloat(r[26])||0, j = parseFloat(r[28])||0, jl = parseFloat(r[30])||0;
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer'; 
-                if(isE) tr.className = 'row-established';
+                if(est.resaltar) tr.className = 'row-established';
                 tr.onclick = () => openModal(r);
 
                 // ====== NUEVO: helper para generar la celda de observación ordenada (texto truncado + botón fijo) ======
@@ -519,7 +534,7 @@
                 const celdaObsJunio = celdaObs(r[29], 'JUNIO');
                 const celdaObsJulio = celdaObs(r[31], 'JULIO');
 
-                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${isE?'<span class="badge-status bg-established">CLIENTE</span>':'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td>${celdaObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td>${celdaObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td>${celdaObsJunio}</td><td style="text-align:center; background:#f3e8ff;" class="${jl>0?'vta-positiva':''}">${jl}</td><td>${celdaObsJulio}</td>`;
+                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${est.resaltar?`<span class="badge-status bg-established">${est.badgeTexto}</span>`:'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td>${celdaObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td>${celdaObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td>${celdaObsJunio}</td><td style="text-align:center; background:#f3e8ff;" class="${jl>0?'vta-positiva':''}">${jl}</td><td>${celdaObsJulio}</td>`;
                 b.appendChild(tr);
             });
             updateVentaStats();
@@ -529,20 +544,22 @@
             const l = document.getElementById('mapList'); l.innerHTML = '';
             markersArray.forEach(m => map.removeLayer(m)); markersArray = [];
             data.forEach(r => {
-                const c = parseCoords(r[9]), isE = r[22] && r[22].toLowerCase().includes("establecido");
+                const c = parseCoords(r[9]);
+                const est = getEstadoCliente(r);
                 if(c) {
                     const m = L.circleMarker(c, { 
                         radius: 10, 
                         fillColor: colorMap[r[1]], 
-                        color: isE ? '#f39c12' : '#fff', 
-                        weight: isE ? 4 : 2, 
+                        color: est.resaltar ? '#f39c12' : '#fff', 
+                        weight: est.resaltar ? 4 : 2, 
                         fillOpacity: 0.9 
                     }).addTo(map);
                     m.on('click', () => openModal(r)); markersArray.push(m);
                 }
                 const d = document.createElement('div');
-                d.style = `padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-size:13px; ${isE?'background:#e0f2fe':''}`;
-                d.innerHTML = `<div style="display:flex; justify-content:space-between;"><b>${r[4]}</b> <span style="font-size:10px; color:#666;">${r[3]}</span></div><span style="color:${colorMap[r[1]]}; font-weight:bold;">● ${r[1]}</span>`;
+                d.style = `padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-size:13px; ${est.resaltar?'background:#e0f2fe':''}`;
+                const badgeMap = est.resaltar ? `<div style="margin-top:4px;"><span class="badge-status bg-established" style="margin-left:0">${est.badgeTexto}</span></div>` : '';
+                d.innerHTML = `<div style="display:flex; justify-content:space-between;"><b>${r[4]}</b> <span style="font-size:10px; color:#666;">${r[3]}</span></div><span style="color:${colorMap[r[1]]}; font-weight:bold;">● ${r[1]}</span>${badgeMap}`;
                 d.onclick = () => { 
                     if(c) map.setView(c, 17); 
                     openModal(r); 
@@ -561,7 +578,7 @@
             const z = document.getElementById(prefix+'-z').value;
 
             const filtered = globalData.filter(r => {
-                const isE = r[22] && r[22].toLowerCase().includes("establecido");
+                const isE = r[22] && r[22].trim() !== "";
                 const state = isE ? 'cliente' : 'prospecto';
                 let matchMes = true;
                 if(m !== "") {
@@ -598,15 +615,25 @@
         }
 
         function openModal(r) {
-            const isE = r[22] && r[22].toLowerCase().includes("establecido");
+            const est = getEstadoCliente(r);
             let vis = ''; [17,18,19,20,21].forEach((idx, i) => { if(r[idx] && r[idx].trim()!=='') vis += `<div class="visit-card"><b>Visita ${i+1}:</b> ${r[idx]}</div>`; });
             const c = parseCoords(r[9]);
             let media = r[15] && r[15].includes('<iframe') ? `<div class="img-preview">${r[15].replace(/width="[^"]*"/, 'width="100%"').replace(/height="[^"]*"/, 'height="350"')}</div>` : `<img src="${getImg(r[15]) || 'https://via.placeholder.com/600x400?text=Llanterama+2026'}" class="img-preview">`;
-            
+
+            // Badge principal: si es cliente histórico usamos "CLIENTE ESTABLECIDO"; si es otro texto (ej. "Asignado a Miguel L.") lo mostramos tal cual; si está vacío = PROSPECTO
+            let badgePrincipal;
+            if (est.esCliente) {
+                badgePrincipal = '<span class="badge-status bg-established">CLIENTE ESTABLECIDO</span>';
+            } else if (est.resaltar) {
+                badgePrincipal = `<span class="badge-status bg-established">${est.badgeTexto}</span>`;
+            } else {
+                badgePrincipal = '<span class="badge-status" style="background:#888">PROSPECTO</span>';
+            }
+
             document.getElementById('modal-data').innerHTML = `
                 ${media}
                 <h2 style="color:var(--primary); margin:0;">${r[4]}</h2>
-                <div style="margin:10px 0;">${isE?'<span class="badge-status bg-established">CLIENTE ESTABLECIDO</span>':'<span class="badge-status" style="background:#888">PROSPECTO</span>'}</div>
+                <div style="margin:10px 0;">${badgePrincipal}</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:13px; background:#f9f9f9; padding:15px; border-radius:15px; border:1px solid #eee;">
                     <div><b>Vendedor:</b> <span style="color:${colorMap[r[1]]}; font-weight:800;">${r[1]}</span></div>
                     <div><b>Zona:</b> ${r[3]}</div>
