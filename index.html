@@ -75,6 +75,36 @@
         .bg-established { background: var(--established-border); }
         .vta-positiva { font-weight: bold; color: #155724; background: #d4edda; padding: 4px 8px; border-radius: 6px; border: 1px solid #c3e6cb; }
 
+        /* ====== NUEVO: badge de asignación editable ====== */
+        .badge-editable {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .badge-edit-btn {
+            background: rgba(255,255,255,0.25);
+            border: none;
+            color: white;
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        .badge-edit-btn:hover { background: rgba(255,255,255,0.5); }
+        .badge-add-asign {
+            background: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-left: 5px;
+        }
+        .badge-add-asign:hover { background: #d68910; }
+
         /* MAPA MEJORADO MÓVIL */
         .map-layout { display: flex; gap: 15px; height: 75vh; position: relative; }
         #map { flex: 1; border-radius: 15px; border: 1px solid #ddd; z-index: 1; }
@@ -374,6 +404,33 @@
         </div>
     </div>
 
+    <!-- ====== NUEVO: MODAL PARA ESCRIBIR/EDITAR ASIGNACIÓN (columna W) ====== -->
+    <div id="asignModal" class="modal">
+        <div class="modal-content" style="max-width: 480px;">
+            <span class="close-btn" onclick="closeAsignModal()">×</span>
+            <h3 style="color:var(--primary); margin-top:0;">Asignar prospecto / marcar cliente</h3>
+            <div style="font-size:13px; color:#555;">
+                <b id="asign-negocio-label">--</b><br>
+                <span id="asign-vendedor-label" style="font-size:12px; color:#999;"></span>
+            </div>
+
+            <div id="asign-desambiguar" style="display:none;">
+                <label style="font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase; display:block; margin:12px 0 5px;">Hay varias visitas con este negocio. Elige la correcta:</label>
+                <select id="asign-select-fecha" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"></select>
+            </div>
+
+            <label style="font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase; display:block; margin:12px 0 5px;">Texto de asignación:</label>
+            <input type="text" id="asign-input" placeholder="Ej: Asignado a Miguel L." style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; font-size:14px;">
+            <div style="font-size:12px; color:#777; margin-top:4px;">
+                Escribe el nombre del vendedor asignado, o "Cliente establecido" si ya compró. Dejar vacío = volver a estado prospecto.
+            </div>
+
+            <div id="asign-status" class="obs-status" style="font-size:13px; margin-top:12px; padding:10px; border-radius:8px; display:none;"></div>
+
+            <button class="btn-guardar-obs" id="asign-btn-guardar" onclick="guardarAsignacionWeb()" style="background:var(--established-border);">💾 Guardar asignación</button>
+        </div>
+    </div>
+
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-VTTO816SWHrV1zM7ipVS6PNKoI8QBrBmvVTeR7xij0HvXvhrxDGOP1QH-t9MVe7IhFvlfkLUddhN/pub?output=csv';
 
@@ -491,14 +548,31 @@
             initCharts(st);
         }
 
+        // ====== NUEVO: helper que genera el badge de asignación (editable o "asignar") ======
+        // rowIdx: índice único dentro de la vista para poder ubicar el span y actualizarlo tras guardar
+        function renderBadgeAsignacion(r, prefijoId, rowIdx) {
+            const est = getEstadoCliente(r);
+            const vendedor = escAttr((r[1] || '').toString());
+            const negocio = escAttr((r[4] || '').toString());
+            const asignActual = escAttr((r[22] || '').toString());
+            const spanId = `asign-badge-${prefijoId}-${rowIdx}`;
+            if (est.resaltar) {
+                return `<span class="badge-status bg-established badge-editable" id="${spanId}">
+                    <span class="badge-text">${est.badgeTexto}</span>
+                    <button class="badge-edit-btn" onclick="event.stopPropagation(); abrirAsignModal('${vendedor}','${negocio}','${asignActual}','${spanId}')" title="Editar asignación">✏️</button>
+                </span>`;
+            }
+            return `<button class="badge-add-asign" id="${spanId}" onclick="event.stopPropagation(); abrirAsignModal('${vendedor}','${negocio}','','${spanId}')" title="Asignar a vendedor">+ ASIGNAR</button>`;
+        }
+
         function renderTable(data) {
             const b = document.getElementById('tableBody'); b.innerHTML = '';
-            data.forEach(r => {
+            data.forEach((r, idx) => {
                 const est = getEstadoCliente(r);
                 const tr = document.createElement('tr');
                 if(est.resaltar) tr.className = 'row-established';
                 tr.onclick = () => openModal(r);
-                const badge = est.resaltar ? `<span class="badge-status bg-established">${est.badgeTexto}</span>` : '';
+                const badge = renderBadgeAsignacion(r, 'lst', idx);
                 tr.innerHTML = `<td>${r[0]}</td><td style="color:${colorMap[r[1]]}; font-weight:800;">${r[1]}</td><td><b>${r[4]}</b> ${badge}</td><td>${r[5]}</td><td>${r[3]}</td><td>${r[12]}</td><td><a href="https://wa.me/52${r[7].replace(/\D/g,'')}" target="_blank" style="padding:5px 10px; background:var(--accent); color:white; border-radius:6px; text-decoration:none; font-size:11px; font-weight:bold;">WA</a></td>`;
                 b.appendChild(tr);
             });
@@ -534,7 +608,8 @@
                 const celdaObsJunio = celdaObs(r[29], 'JUNIO');
                 const celdaObsJulio = celdaObs(r[31], 'JULIO');
 
-                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${est.resaltar?`<span class="badge-status bg-established">${est.badgeTexto}</span>`:'<span style="color:#999;font-size:10px">PROSP.</span>'}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td>${celdaObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td>${celdaObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td>${celdaObsJunio}</td><td style="text-align:center; background:#f3e8ff;" class="${jl>0?'vta-positiva':''}">${jl}</td><td>${celdaObsJulio}</td>`;
+                const badgeAsign = renderBadgeAsignacion(r, 'vta', idxFila);
+                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${badgeAsign}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td>${celdaObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td>${celdaObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td>${celdaObsJunio}</td><td style="text-align:center; background:#f3e8ff;" class="${jl>0?'vta-positiva':''}">${jl}</td><td>${celdaObsJulio}</td>`;
                 b.appendChild(tr);
             });
             updateVentaStats();
@@ -621,13 +696,24 @@
             let media = r[15] && r[15].includes('<iframe') ? `<div class="img-preview">${r[15].replace(/width="[^"]*"/, 'width="100%"').replace(/height="[^"]*"/, 'height="350"')}</div>` : `<img src="${getImg(r[15]) || 'https://via.placeholder.com/600x400?text=Llanterama+2026'}" class="img-preview">`;
 
             // Badge principal: si es cliente histórico usamos "CLIENTE ESTABLECIDO"; si es otro texto (ej. "Asignado a Miguel L.") lo mostramos tal cual; si está vacío = PROSPECTO
+            const asignActual = escAttr((r[22] || '').toString());
+            const vendedorAttr = escAttr((r[1] || '').toString());
+            const negocioAttr = escAttr((r[4] || '').toString());
+            const modalSpanId = 'asign-badge-modal';
             let badgePrincipal;
             if (est.esCliente) {
-                badgePrincipal = '<span class="badge-status bg-established">CLIENTE ESTABLECIDO</span>';
+                badgePrincipal = `<span class="badge-status bg-established badge-editable" id="${modalSpanId}">
+                    <span class="badge-text">CLIENTE ESTABLECIDO</span>
+                    <button class="badge-edit-btn" onclick="abrirAsignModal('${vendedorAttr}','${negocioAttr}','${asignActual}','${modalSpanId}')" title="Editar">✏️</button>
+                </span>`;
             } else if (est.resaltar) {
-                badgePrincipal = `<span class="badge-status bg-established">${est.badgeTexto}</span>`;
+                badgePrincipal = `<span class="badge-status bg-established badge-editable" id="${modalSpanId}">
+                    <span class="badge-text">${est.badgeTexto}</span>
+                    <button class="badge-edit-btn" onclick="abrirAsignModal('${vendedorAttr}','${negocioAttr}','${asignActual}','${modalSpanId}')" title="Editar">✏️</button>
+                </span>`;
             } else {
-                badgePrincipal = '<span class="badge-status" style="background:#888">PROSPECTO</span>';
+                badgePrincipal = `<span class="badge-status" style="background:#888" id="${modalSpanId}">PROSPECTO</span>
+                    <button class="badge-add-asign" onclick="abrirAsignModal('${vendedorAttr}','${negocioAttr}','','${modalSpanId}')">+ ASIGNAR</button>`;
             }
 
             document.getElementById('modal-data').innerHTML = `
@@ -820,6 +906,95 @@
             } catch (err) {
                 mostrarEstadoObs('err', '❌ Error de conexión: ' + err.message);
                 document.getElementById('obs-btn-guardar').disabled = false;
+            }
+        }
+
+        // ============================================================
+        // ====== NUEVO: LÓGICA DEL MODAL DE ASIGNACIÓN (columna W) ======
+        // ============================================================
+
+        let asignContexto = { vendedor: '', negocio: '', fechaVisita: null, spanId: null };
+
+        function abrirAsignModal(vendedor, negocio, asignActual, spanId) {
+            asignContexto = { vendedor, negocio, fechaVisita: null, spanId };
+            document.getElementById('asign-negocio-label').innerText = negocio;
+            document.getElementById('asign-vendedor-label').innerText = `Vendedor original: ${vendedor}`;
+            document.getElementById('asign-input').value = asignActual || '';
+            document.getElementById('asign-desambiguar').style.display = 'none';
+            const st = document.getElementById('asign-status');
+            st.className = 'obs-status';
+            st.style.display = 'none';
+            st.innerText = '';
+            document.getElementById('asign-btn-guardar').disabled = false;
+            document.getElementById('asignModal').style.display = 'block';
+        }
+
+        function closeAsignModal() {
+            document.getElementById('asignModal').style.display = 'none';
+        }
+
+        function mostrarEstadoAsign(tipo, texto) {
+            const el = document.getElementById('asign-status');
+            el.className = 'obs-status show ' + tipo;
+            el.style.display = 'block';
+            el.innerText = texto;
+        }
+
+        async function guardarAsignacionWeb() {
+            const texto = document.getElementById('asign-input').value.trim();
+
+            // Si el selector de desambiguación está visible, tomamos la fecha elegida
+            const desambiguarVisible = document.getElementById('asign-desambiguar').style.display !== 'none';
+            if (desambiguarVisible) {
+                asignContexto.fechaVisita = document.getElementById('asign-select-fecha').value;
+            }
+
+            document.getElementById('asign-btn-guardar').disabled = true;
+            mostrarEstadoAsign('loading', 'Guardando asignación...');
+
+            try {
+                const resp = await fetch(APPSCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        accion: 'guardarAsignacion',
+                        vendedor: asignContexto.vendedor,
+                        negocio: asignContexto.negocio,
+                        asignacion: texto,
+                        fechaVisita: asignContexto.fechaVisita
+                    })
+                });
+                const data = await resp.json();
+
+                if (data.ok) {
+                    mostrarEstadoAsign('ok', '✅ ' + (data.mensaje || 'Guardado correctamente.'));
+
+                    // Actualizar dato en memoria (globalData) para que filtros/refiltrados reflejen el cambio
+                    const filaEnMemoria = globalData.find(r =>
+                        (r[1] || '').toString().trim().toLowerCase() === asignContexto.vendedor.toLowerCase() &&
+                        (r[4] || '').toString().trim().toLowerCase() === asignContexto.negocio.toLowerCase()
+                    );
+                    if (filaEnMemoria) filaEnMemoria[22] = texto;
+
+                    // Re-renderizar tablas y mapa para que el badge y el resaltado se actualicen en todas las vistas
+                    renderTable(globalData);
+                    renderVentas(globalData);
+                    renderMap(globalData);
+
+                    setTimeout(() => { closeAsignModal(); }, 1000);
+                } else if (data.requiereDesambiguar) {
+                    const sel = document.getElementById('asign-select-fecha');
+                    sel.innerHTML = data.opciones.map(f => `<option value="${f}">${f}</option>`).join('');
+                    document.getElementById('asign-desambiguar').style.display = 'block';
+                    mostrarEstadoAsign('err', data.error || 'Elige la fecha de visita correcta y guarda de nuevo.');
+                    document.getElementById('asign-btn-guardar').disabled = false;
+                } else {
+                    mostrarEstadoAsign('err', '❌ ' + (data.error || 'No se pudo guardar.'));
+                    document.getElementById('asign-btn-guardar').disabled = false;
+                }
+            } catch (err) {
+                mostrarEstadoAsign('err', '❌ Error de conexión: ' + err.message);
+                document.getElementById('asign-btn-guardar').disabled = false;
             }
         }
     </script>
