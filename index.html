@@ -64,11 +64,11 @@
         
         .table-container { background: white; padding: 10px; border-radius: 15px; overflow-x: auto; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
-        #salesTable { min-width: 1350px; }
+        #salesTable { min-width: 1650px; }
         th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; cursor: pointer; border-bottom: 3px solid var(--secondary); white-space: nowrap; user-select: none; }
         th:hover { background: #edf2f7; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
-        #salesTable td:nth-child(6), #salesTable td:nth-child(8), #salesTable td:nth-child(10), #salesTable td:nth-child(12) { padding: 6px 10px; }
+        #salesTable td:nth-child(6), #salesTable td:nth-child(8), #salesTable td:nth-child(10), #salesTable td:nth-child(12), #salesTable td:nth-child(14), #salesTable td:nth-child(16) { padding: 6px 10px; }
         
         .row-established { background-color: var(--established) !important; border-left: 6px solid var(--established-border); }
         .badge-status { padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; margin-left: 5px; color: white; text-transform: uppercase; }
@@ -287,7 +287,9 @@
                 <div class="tire-box"><label>Llantas Abril</label><span id="vSum-abr">0</span></div>
                 <div class="tire-box"><label>Llantas Mayo</label><span id="vSum-may">0</span></div>
                 <div class="tire-box"><label>Llantas Junio</label><span id="vSum-jun">0</span></div>
-                <div class="tire-box" style="border: 1px solid var(--secondary);"><label style="color:var(--secondary)">Llantas Julio</label><span id="vSum-jul" style="color:var(--secondary)">0</span></div>
+                <div class="tire-box"><label>Llantas Julio</label><span id="vSum-jul">0</span></div>
+                <div class="tire-box"><label>Llantas Agosto</label><span id="vSum-ago">0</span></div>
+                <div class="tire-box" style="border: 1px solid var(--secondary);"><label style="color:var(--secondary)">Llantas Septiembre</label><span id="vSum-sep" style="color:var(--secondary)">0</span></div>
                 <div class="tire-box" style="background: var(--primary);"><label style="color:white">Total Llantas</label><span id="vSum-total" style="color:white">0</span></div>
                 <div class="tire-box" style="border: 2px solid var(--gold);">
                     <label style="color:var(--gold)">% Conv. Clientes</label>
@@ -312,6 +314,10 @@
                             <th>Obs. Junio</th>
                             <th onclick="sortTable(10, 'salesTable')" style="background:#f3e8ff; text-align:center;">JULIO ↕</th>
                             <th>Obs. Julio</th>
+                            <th onclick="sortTable(12, 'salesTable')" style="background:#fce4ec; text-align:center;">AGOSTO ↕</th>
+                            <th>Obs. Agosto</th>
+                            <th onclick="sortTable(14, 'salesTable')" style="background:#e0f7fa; text-align:center;">SEPTIEMBRE ↕</th>
+                            <th>Obs. Septiembre</th>
                         </tr>
                     </thead>
                     <tbody id="vtaTableBody"></tbody>
@@ -582,7 +588,7 @@
             const b = document.getElementById('vtaTableBody'); b.innerHTML = '';
             data.forEach((r, idxFila) => {
                 const est = getEstadoCliente(r);
-                const a = parseFloat(r[24])||0, m = parseFloat(r[26])||0, j = parseFloat(r[28])||0, jl = parseFloat(r[30])||0;
+                const a = parseFloat(r[24])||0, m = parseFloat(r[26])||0, j = parseFloat(r[28])||0, jl = parseFloat(r[30])||0, ag = parseFloat(r[32])||0, se = parseFloat(r[35])||0;
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer'; 
                 if(est.resaltar) tr.className = 'row-established';
@@ -607,9 +613,11 @@
                 const celdaObsMayo = celdaObs(r[27], 'MAYO');
                 const celdaObsJunio = celdaObs(r[29], 'JUNIO');
                 const celdaObsJulio = celdaObs(r[31], 'JULIO');
+                const celdaObsAgosto = celdaObs(r[33], 'AGOSTO');
+                const celdaObsSeptiembre = celdaObs(r[36], 'SEPTIEMBRE');
 
                 const badgeAsign = renderBadgeAsignacion(r, 'vta', idxFila);
-                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${badgeAsign}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td>${celdaObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td>${celdaObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td>${celdaObsJunio}</td><td style="text-align:center; background:#f3e8ff;" class="${jl>0?'vta-positiva':''}">${jl}</td><td>${celdaObsJulio}</td>`;
+                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${badgeAsign}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td>${celdaObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td>${celdaObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td>${celdaObsJunio}</td><td style="text-align:center; background:#f3e8ff;" class="${jl>0?'vta-positiva':''}">${jl}</td><td>${celdaObsJulio}</td><td style="text-align:center; background:#fce4ec;" class="${ag>0?'vta-positiva':''}">${ag}</td><td>${celdaObsAgosto}</td><td style="text-align:center; background:#e0f7fa;" class="${se>0?'vta-positiva':''}">${se}</td><td>${celdaObsSeptiembre}</td>`;
                 b.appendChild(tr);
             });
             updateVentaStats();
@@ -670,12 +678,14 @@
         }
 
         function updateVentaStats() {
-            let sA = 0, sM = 0, sJ = 0, sJl = 0, totalRegistrosVisibles = 0, clientesEstablecidosVisibles = 0;
+            let sA = 0, sM = 0, sJ = 0, sJl = 0, sAg = 0, sSe = 0, totalRegistrosVisibles = 0, clientesEstablecidosVisibles = 0;
             document.querySelectorAll('#vtaTableBody tr').forEach(tr => {
                 sA += parseFloat(tr.cells[4].innerText)||0;
                 sM += parseFloat(tr.cells[6].innerText)||0;
                 sJ += parseFloat(tr.cells[8].innerText)||0;
                 sJl += parseFloat(tr.cells[10].innerText)||0;
+                sAg += parseFloat(tr.cells[12].innerText)||0;
+                sSe += parseFloat(tr.cells[14].innerText)||0;
                 totalRegistrosVisibles++;
                 if(tr.classList.contains('row-established')) clientesEstablecidosVisibles++;
             });
@@ -683,7 +693,9 @@
             document.getElementById('vSum-may').innerText = sM;
             document.getElementById('vSum-jun').innerText = sJ;
             document.getElementById('vSum-jul').innerText = sJl;
-            document.getElementById('vSum-total').innerText = sA + sM + sJ + sJl;
+            document.getElementById('vSum-ago').innerText = sAg;
+            document.getElementById('vSum-sep').innerText = sSe;
+            document.getElementById('vSum-total').innerText = sA + sM + sJ + sJl + sAg + sSe;
             document.getElementById('vConv-rate-vals').innerText = `${clientesEstablecidosVisibles} / ${totalRegistrosVisibles}`;
             document.getElementById('vConv-rate').innerText = totalRegistrosVisibles > 0 
                 ? ((clientesEstablecidosVisibles / totalRegistrosVisibles) * 100).toFixed(1) + "%" : "0%";
@@ -880,7 +892,7 @@
 
                     // También actualizamos el dato en memoria (globalData) para que filtros y reordenamientos
                     // sigan mostrando el texto correcto sin tener que recargar el CSV.
-                    const colObsPorMes = { 'ABRIL': 25, 'MAYO': 27, 'JUNIO': 29, 'JULIO': 31 };
+                    const colObsPorMes = { 'ABRIL': 25, 'MAYO': 27, 'JUNIO': 29, 'JULIO': 31, 'AGOSTO': 33, 'SEPTIEMBRE': 36 };
                     const colObs = colObsPorMes[obsContexto.mes];
                     if (colObs !== undefined) {
                         const filaEnMemoria = globalData.find(r =>
