@@ -64,11 +64,11 @@
         
         .table-container { background: white; padding: 10px; border-radius: 15px; overflow-x: auto; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
-        #salesTable { min-width: 1650px; }
         th { background: #f8f9fa; color: var(--primary); padding: 12px; text-align: left; cursor: pointer; border-bottom: 3px solid var(--secondary); white-space: nowrap; user-select: none; }
         th:hover { background: #edf2f7; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
-        #salesTable td:nth-child(6), #salesTable td:nth-child(8), #salesTable td:nth-child(10), #salesTable td:nth-child(12), #salesTable td:nth-child(14), #salesTable td:nth-child(16) { padding: 6px 10px; }
+        /* Padding compacto en las celdas que contienen observaciones editables */
+        #salesTable td:has(.obs-cell) { padding: 6px 10px; }
         
         .row-established { background-color: var(--established) !important; border-left: 6px solid var(--established-border); }
         .badge-status { padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; margin-left: 5px; color: white; text-transform: uppercase; }
@@ -104,6 +104,21 @@
             margin-left: 5px;
         }
         .badge-add-asign:hover { background: #d68910; }
+
+        /* ====== NUEVO: TABS DE MESES (Ventas Mensuales) ====== */
+        .mes-tabs {
+            display: flex; gap: 6px; margin-bottom: 15px; flex-wrap: wrap;
+            background: white; padding: 12px; border-radius: 15px; border: 1px solid #ddd;
+        }
+        .mes-tab {
+            padding: 9px 18px; background: #f4f7f9; border: 2px solid #e2e8f0;
+            border-radius: 25px; cursor: pointer; font-size: 12px; font-weight: 800;
+            color: var(--text); transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .mes-tab:hover { border-color: var(--secondary); background: #fff; }
+        .mes-tab.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 3px 8px rgba(0,74,153,0.25); }
+        .mes-tab.tab-todos { background: #fff8e6; border-color: var(--gold); color: var(--gold); }
+        .mes-tab.tab-todos.active { background: var(--gold); color: white; border-color: var(--gold); }
 
         /* MAPA MEJORADO MÓVIL */
         .map-layout { display: flex; gap: 15px; height: 75vh; position: relative; }
@@ -297,28 +312,20 @@
                     <span id="vConv-rate" style="color:var(--gold); font-size: 20px;">0%</span>
                 </div>
             </div>
+            <div class="mes-tabs" id="mes-tabs-container">
+                <button class="mes-tab tab-todos" data-mes="TODOS" onclick="cambiarMesTab('TODOS')">📊 Todos</button>
+                <button class="mes-tab" data-mes="ABRIL" onclick="cambiarMesTab('ABRIL')">Abril</button>
+                <button class="mes-tab" data-mes="MAYO" onclick="cambiarMesTab('MAYO')">Mayo</button>
+                <button class="mes-tab" data-mes="JUNIO" onclick="cambiarMesTab('JUNIO')">Junio</button>
+                <button class="mes-tab" data-mes="JULIO" onclick="cambiarMesTab('JULIO')">Julio</button>
+                <button class="mes-tab" data-mes="AGOSTO" onclick="cambiarMesTab('AGOSTO')">Agosto</button>
+                <button class="mes-tab active" data-mes="SEPTIEMBRE" onclick="cambiarMesTab('SEPTIEMBRE')">Septiembre</button>
+            </div>
             <div class="filter-row" id="filters-ventas"></div>
             <div class="table-container">
                 <table id="salesTable">
                     <thead>
-                        <tr>
-                            <th onclick="sortTable(0, 'salesTable')">Código ↕</th>
-                            <th onclick="sortTable(1, 'salesTable')">Negocio / Cliente ↕</th>
-                            <th onclick="sortTable(2, 'salesTable')">Vendedor ↕</th>
-                            <th onclick="sortTable(3, 'salesTable')">Estado ↕</th>
-                            <th onclick="sortTable(4, 'salesTable')" style="background:#fff3e0; text-align:center;">ABRIL ↕</th>
-                            <th>Obs. Abril</th>
-                            <th onclick="sortTable(6, 'salesTable')" style="background:#e1f5fe; text-align:center;">MAYO ↕</th>
-                            <th>Obs. Mayo</th>
-                            <th onclick="sortTable(8, 'salesTable')" style="background:#e8f5e9; text-align:center;">JUNIO ↕</th>
-                            <th>Obs. Junio</th>
-                            <th onclick="sortTable(10, 'salesTable')" style="background:#f3e8ff; text-align:center;">JULIO ↕</th>
-                            <th>Obs. Julio</th>
-                            <th onclick="sortTable(12, 'salesTable')" style="background:#fce4ec; text-align:center;">AGOSTO ↕</th>
-                            <th>Obs. Agosto</th>
-                            <th onclick="sortTable(14, 'salesTable')" style="background:#e0f7fa; text-align:center;">SEPTIEMBRE ↕</th>
-                            <th>Obs. Septiembre</th>
-                        </tr>
+                        <tr></tr>
                     </thead>
                     <tbody id="vtaTableBody"></tbody>
                 </table>
@@ -531,14 +538,26 @@
                 if(e && e.trim() !== "") st.established++;
             });
 
-            const filterTpl = (idPrefix) => `
-                <select id="${idPrefix}-m" onchange="runFilter('${idPrefix}')"><option value="">📅 Mes</option>${Array.from(sets.m).sort((a,b)=>mesNombres.indexOf(a)-mesNombres.indexOf(b)).map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
+            const filterTpl = (idPrefix) => {
+                // En Ventas usamos los meses configurados (siempre disponibles, aunque no haya prospecto registrado ese mes).
+                // En Prospectos y Mapa usamos solo los meses en que hay registros.
+                let mesOptions;
+                if (idPrefix === 'v') {
+                    mesOptions = Object.keys(MES_CONFIG)
+                        .map(m => `<option value="${m}">${m.charAt(0) + m.slice(1).toLowerCase()}</option>`).join('');
+                } else {
+                    mesOptions = Array.from(sets.m).sort((a,b)=>mesNombres.indexOf(a)-mesNombres.indexOf(b))
+                        .map(x=>`<option value="${x}">${x}</option>`).join('');
+                }
+                return `
+                <select id="${idPrefix}-m" onchange="runFilter('${idPrefix}')"><option value="">📅 Mes</option>${mesOptions}</select>
                 <select id="${idPrefix}-v" onchange="runFilter('${idPrefix}')"><option value="">👤 Vendedor</option>${Array.from(sets.v).sort().map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
                 <select id="${idPrefix}-d" onchange="runFilter('${idPrefix}')"><option value="">📅 Fecha</option>${Array.from(sets.d).sort().reverse().map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
                 <select id="${idPrefix}-e" onchange="runFilter('${idPrefix}')"><option value="">🏷️ Estado</option><option value="cliente">⭐ Clientes</option><option value="prospecto">📌 Prospectos</option></select>
                 <select id="${idPrefix}-g" onchange="runFilter('${idPrefix}')"><option value="">🛠️ Giro</option>${Array.from(sets.g).sort().map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
                 <select id="${idPrefix}-z" onchange="runFilter('${idPrefix}')"><option value="">📍 Zona</option>${Array.from(sets.z).sort().map(x=>`<option value="${x}">${x}</option>`).join('')}</select>
             `;
+            };
 
             document.getElementById('filters-lista').innerHTML = filterTpl('l');
             document.getElementById('filters-map').innerHTML = filterTpl('m');
@@ -584,17 +603,66 @@
             });
         }
 
+        // ====== NUEVO: Configuración central de meses (una sola fuente de verdad) ======
+        // idxVenta y idxObs son los índices 0-based en el CSV (que coinciden con globalData en memoria)
+        const MES_CONFIG = {
+            'ABRIL':      { idxVenta: 24, idxObs: 25, color: '#fff3e0' },
+            'MAYO':       { idxVenta: 26, idxObs: 27, color: '#e1f5fe' },
+            'JUNIO':      { idxVenta: 28, idxObs: 29, color: '#e8f5e9' },
+            'JULIO':      { idxVenta: 30, idxObs: 31, color: '#f3e8ff' },
+            'AGOSTO':     { idxVenta: 32, idxObs: 33, color: '#fce4ec' },
+            'SEPTIEMBRE': { idxVenta: 35, idxObs: 36, color: '#e0f7fa' }
+        };
+
+        // Tab activo en la vista de Ventas Mensuales (default: mes actual)
+        let mesTabActivo = 'SEPTIEMBRE';
+
+        // Cambia el tab activo y re-renderiza la tabla respetando el filtro actual
+        function cambiarMesTab(mes) {
+            mesTabActivo = mes;
+            document.querySelectorAll('.mes-tab').forEach(t => t.classList.toggle('active', t.dataset.mes === mes));
+            // Re-aplicar filtros vigentes (dispara re-render con nueva estructura de columnas)
+            runFilter('v');
+        }
+
+        // Reconstruye el encabezado (thead) de la tabla de ventas según el tab activo
+        function reconstruirEncabezadoVentas() {
+            const thead = document.querySelector('#salesTable thead tr');
+            let html = `
+                <th onclick="sortTable(0, 'salesTable')">Código ↕</th>
+                <th onclick="sortTable(1, 'salesTable')">Negocio / Cliente ↕</th>
+                <th onclick="sortTable(2, 'salesTable')">Vendedor ↕</th>
+                <th onclick="sortTable(3, 'salesTable')">Estado ↕</th>
+            `;
+            const nombreLindo = mes => mes.charAt(0) + mes.slice(1).toLowerCase();
+            if (mesTabActivo === 'TODOS') {
+                let colIdx = 4;
+                Object.keys(MES_CONFIG).forEach(mes => {
+                    const cfg = MES_CONFIG[mes];
+                    html += `<th onclick="sortTable(${colIdx}, 'salesTable')" style="background:${cfg.color}; text-align:center;">${mes} ↕</th>`;
+                    html += `<th>Obs. ${nombreLindo(mes)}</th>`;
+                    colIdx += 2;
+                });
+            } else {
+                const cfg = MES_CONFIG[mesTabActivo];
+                html += `<th onclick="sortTable(4, 'salesTable')" style="background:${cfg.color}; text-align:center;">${mesTabActivo} ↕</th>`;
+                html += `<th>Obs. ${nombreLindo(mesTabActivo)}</th>`;
+            }
+            thead.innerHTML = html;
+            // Ajustar ancho mínimo según cuántas columnas se muestran
+            document.getElementById('salesTable').style.minWidth = mesTabActivo === 'TODOS' ? '1650px' : '850px';
+        }
+
         function renderVentas(data) {
+            reconstruirEncabezadoVentas();
             const b = document.getElementById('vtaTableBody'); b.innerHTML = '';
             data.forEach((r, idxFila) => {
                 const est = getEstadoCliente(r);
-                const a = parseFloat(r[24])||0, m = parseFloat(r[26])||0, j = parseFloat(r[28])||0, jl = parseFloat(r[30])||0, ag = parseFloat(r[32])||0, se = parseFloat(r[35])||0;
                 const tr = document.createElement('tr');
-                tr.style.cursor = 'pointer'; 
+                tr.style.cursor = 'pointer';
                 if(est.resaltar) tr.className = 'row-established';
                 tr.onclick = () => openModal(r);
 
-                // ====== NUEVO: helper para generar la celda de observación ordenada (texto truncado + botón fijo) ======
                 const negocio = (r[4] || '').toString();
                 const vendedor = (r[1] || '').toString();
 
@@ -609,18 +677,25 @@
                     </div>`;
                 };
 
-                const celdaObsAbril = celdaObs(r[25], 'ABRIL');
-                const celdaObsMayo = celdaObs(r[27], 'MAYO');
-                const celdaObsJunio = celdaObs(r[29], 'JUNIO');
-                const celdaObsJulio = celdaObs(r[31], 'JULIO');
-                const celdaObsAgosto = celdaObs(r[33], 'AGOSTO');
-                const celdaObsSeptiembre = celdaObs(r[36], 'SEPTIEMBRE');
+                const celdaVentaObs = (mes) => {
+                    const cfg = MES_CONFIG[mes];
+                    const venta = parseFloat(r[cfg.idxVenta]) || 0;
+                    const obs = r[cfg.idxObs];
+                    return `<td style="text-align:center; background:${cfg.color};" class="${venta>0?'vta-positiva':''}">${venta}</td><td>${celdaObs(obs, mes)}</td>`;
+                };
+
+                let cellsMeses = '';
+                if (mesTabActivo === 'TODOS') {
+                    Object.keys(MES_CONFIG).forEach(mes => { cellsMeses += celdaVentaObs(mes); });
+                } else {
+                    cellsMeses = celdaVentaObs(mesTabActivo);
+                }
 
                 const badgeAsign = renderBadgeAsignacion(r, 'vta', idxFila);
-                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${badgeAsign}</td><td style="text-align:center; background:#fff3e0;" class="${a>0?'vta-positiva':''}">${a}</td><td>${celdaObsAbril}</td><td style="text-align:center; background:#e1f5fe;" class="${m>0?'vta-positiva':''}">${m}</td><td>${celdaObsMayo}</td><td style="text-align:center; background:#e8f5e9;" class="${j>0?'vta-positiva':''}">${j}</td><td>${celdaObsJunio}</td><td style="text-align:center; background:#f3e8ff;" class="${jl>0?'vta-positiva':''}">${jl}</td><td>${celdaObsJulio}</td><td style="text-align:center; background:#fce4ec;" class="${ag>0?'vta-positiva':''}">${ag}</td><td>${celdaObsAgosto}</td><td style="text-align:center; background:#e0f7fa;" class="${se>0?'vta-positiva':''}">${se}</td><td>${celdaObsSeptiembre}</td>`;
+                tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${badgeAsign}</td>${cellsMeses}`;
                 b.appendChild(tr);
             });
-            updateVentaStats();
+            updateVentaStats(data);
         }
 
         function renderMap(data) {
@@ -665,9 +740,20 @@
                 const state = isE ? 'cliente' : 'prospecto';
                 let matchMes = true;
                 if(m !== "") {
-                    const dStr = r[0].split(' ')[0];
-                    const mesNum = parseInt(dStr.split('/')[1]);
-                    matchMes = mesNombres[mesNum-1] === m;
+                    // ====== FIX: en la vista de Ventas, "Mes" filtra por ventas > 0 en ese mes
+                    // (no por la fecha de registro). En las otras vistas (Prospectos y Mapa)
+                    // conserva la lógica original: mes en que se dio de alta el prospecto.
+                    if (prefix === 'v') {
+                        const cfg = MES_CONFIG[m.toUpperCase()];
+                        if (cfg) {
+                            const venta = parseFloat(r[cfg.idxVenta]) || 0;
+                            matchMes = venta > 0;
+                        }
+                    } else {
+                        const dStr = r[0].split(' ')[0];
+                        const mesNum = parseInt(dStr.split('/')[1]);
+                        matchMes = mesNombres[mesNum-1] === m;
+                    }
                 }
                 return matchMes && (!v || r[1] === v) && (!d || r[0].includes(d)) && (!e || state === e) && (!g || r[5] === g) && (!z || r[3] === z);
             });
@@ -677,28 +763,27 @@
             if(prefix === 'm') renderMap(filtered);
         }
 
-        function updateVentaStats() {
-            let sA = 0, sM = 0, sJ = 0, sJl = 0, sAg = 0, sSe = 0, totalRegistrosVisibles = 0, clientesEstablecidosVisibles = 0;
-            document.querySelectorAll('#vtaTableBody tr').forEach(tr => {
-                sA += parseFloat(tr.cells[4].innerText)||0;
-                sM += parseFloat(tr.cells[6].innerText)||0;
-                sJ += parseFloat(tr.cells[8].innerText)||0;
-                sJl += parseFloat(tr.cells[10].innerText)||0;
-                sAg += parseFloat(tr.cells[12].innerText)||0;
-                sSe += parseFloat(tr.cells[14].innerText)||0;
-                totalRegistrosVisibles++;
-                if(tr.classList.contains('row-established')) clientesEstablecidosVisibles++;
+        function updateVentaStats(data) {
+            // Basado en los datos filtrados (no en el DOM), para que funcione sin importar el tab activo
+            const sums = { ABRIL: 0, MAYO: 0, JUNIO: 0, JULIO: 0, AGOSTO: 0, SEPTIEMBRE: 0 };
+            let totalRegistros = 0, clientes = 0;
+            (data || []).forEach(r => {
+                Object.keys(MES_CONFIG).forEach(mes => {
+                    sums[mes] += parseFloat(r[MES_CONFIG[mes].idxVenta]) || 0;
+                });
+                totalRegistros++;
+                if (getEstadoCliente(r).resaltar) clientes++;
             });
-            document.getElementById('vSum-abr').innerText = sA;
-            document.getElementById('vSum-may').innerText = sM;
-            document.getElementById('vSum-jun').innerText = sJ;
-            document.getElementById('vSum-jul').innerText = sJl;
-            document.getElementById('vSum-ago').innerText = sAg;
-            document.getElementById('vSum-sep').innerText = sSe;
-            document.getElementById('vSum-total').innerText = sA + sM + sJ + sJl + sAg + sSe;
-            document.getElementById('vConv-rate-vals').innerText = `${clientesEstablecidosVisibles} / ${totalRegistrosVisibles}`;
-            document.getElementById('vConv-rate').innerText = totalRegistrosVisibles > 0 
-                ? ((clientesEstablecidosVisibles / totalRegistrosVisibles) * 100).toFixed(1) + "%" : "0%";
+            document.getElementById('vSum-abr').innerText = sums.ABRIL;
+            document.getElementById('vSum-may').innerText = sums.MAYO;
+            document.getElementById('vSum-jun').innerText = sums.JUNIO;
+            document.getElementById('vSum-jul').innerText = sums.JULIO;
+            document.getElementById('vSum-ago').innerText = sums.AGOSTO;
+            document.getElementById('vSum-sep').innerText = sums.SEPTIEMBRE;
+            document.getElementById('vSum-total').innerText = sums.ABRIL + sums.MAYO + sums.JUNIO + sums.JULIO + sums.AGOSTO + sums.SEPTIEMBRE;
+            document.getElementById('vConv-rate-vals').innerText = `${clientes} / ${totalRegistros}`;
+            document.getElementById('vConv-rate').innerText = totalRegistros > 0
+                ? ((clientes / totalRegistros) * 100).toFixed(1) + "%" : "0%";
         }
 
         function openModal(r) {
