@@ -319,7 +319,7 @@
                 <button class="mes-tab" data-mes="JUNIO" onclick="cambiarMesTab('JUNIO')">Junio</button>
                 <button class="mes-tab" data-mes="JULIO" onclick="cambiarMesTab('JULIO')">Julio</button>
                 <button class="mes-tab" data-mes="AGOSTO" onclick="cambiarMesTab('AGOSTO')">Agosto</button>
-                <button class="mes-tab active" data-mes="SEPTIEMBRE" onclick="cambiarMesTab('SEPTIEMBRE')">Septiembre</button>
+                <button class="mes-tab" data-mes="SEPTIEMBRE" onclick="cambiarMesTab('SEPTIEMBRE')">Septiembre</button>
             </div>
             <div class="filter-row" id="filters-ventas"></div>
             <div class="table-container">
@@ -568,6 +568,7 @@
             document.getElementById('v-list-detail').innerHTML = vHtml;
 
             renderTable(globalData);
+            actualizarEstadoTabs();
             renderVentas(globalData);
             renderMap(globalData);
             initCharts(st);
@@ -614,43 +615,72 @@
             'SEPTIEMBRE': { idxVenta: 35, idxObs: 36, color: '#e0f7fa' }
         };
 
-        // Tab activo en la vista de Ventas Mensuales (default: mes actual)
-        let mesTabActivo = 'SEPTIEMBRE';
+        // Meses activos en la vista de Ventas (multi-selección). Default: mes actual.
+        let mesesTabActivos = new Set(['SEPTIEMBRE']);
 
-        // Cambia el tab activo y re-renderiza la tabla respetando el filtro actual
+        // Alterna un mes en la selección. Si es "TODOS" enciende los 6. Si queda vacío, cae a SEPTIEMBRE.
         function cambiarMesTab(mes) {
-            mesTabActivo = mes;
-            document.querySelectorAll('.mes-tab').forEach(t => t.classList.toggle('active', t.dataset.mes === mes));
-            // Re-aplicar filtros vigentes (dispara re-render con nueva estructura de columnas)
+            if (mes === 'TODOS') {
+                const todos = Object.keys(MES_CONFIG);
+                const yaEstanTodos = todos.every(m => mesesTabActivos.has(m));
+                if (yaEstanTodos) {
+                    // Todos ya estaban → limpiar y dejar solo el mes actual
+                    mesesTabActivos = new Set(['SEPTIEMBRE']);
+                } else {
+                    mesesTabActivos = new Set(todos);
+                }
+            } else {
+                if (mesesTabActivos.has(mes)) {
+                    mesesTabActivos.delete(mes);
+                } else {
+                    mesesTabActivos.add(mes);
+                }
+                if (mesesTabActivos.size === 0) mesesTabActivos.add('SEPTIEMBRE');
+            }
+            actualizarEstadoTabs();
             runFilter('v');
         }
 
-        // Reconstruye el encabezado (thead) de la tabla de ventas según el tab activo
+        // Refleja visualmente qué meses están activos y si "TODOS" también debe verse activo
+        function actualizarEstadoTabs() {
+            const todos = Object.keys(MES_CONFIG);
+            const yaEstanTodos = todos.every(m => mesesTabActivos.has(m));
+            document.querySelectorAll('.mes-tab').forEach(t => {
+                const mes = t.dataset.mes;
+                if (mes === 'TODOS') {
+                    t.classList.toggle('active', yaEstanTodos);
+                } else {
+                    t.classList.toggle('active', mesesTabActivos.has(mes));
+                }
+            });
+        }
+
+        // Devuelve los meses activos en el orden natural del año (para renderizar columnas)
+        function mesesActivosOrdenados() {
+            return Object.keys(MES_CONFIG).filter(m => mesesTabActivos.has(m));
+        }
+
+        // Reconstruye el encabezado (thead) de la tabla de ventas según los meses activos
         function reconstruirEncabezadoVentas() {
             const thead = document.querySelector('#salesTable thead tr');
+            const nombreLindo = mes => mes.charAt(0) + mes.slice(1).toLowerCase();
             let html = `
                 <th onclick="sortTable(0, 'salesTable')">Código ↕</th>
                 <th onclick="sortTable(1, 'salesTable')">Negocio / Cliente ↕</th>
                 <th onclick="sortTable(2, 'salesTable')">Vendedor ↕</th>
                 <th onclick="sortTable(3, 'salesTable')">Estado ↕</th>
             `;
-            const nombreLindo = mes => mes.charAt(0) + mes.slice(1).toLowerCase();
-            if (mesTabActivo === 'TODOS') {
-                let colIdx = 4;
-                Object.keys(MES_CONFIG).forEach(mes => {
-                    const cfg = MES_CONFIG[mes];
-                    html += `<th onclick="sortTable(${colIdx}, 'salesTable')" style="background:${cfg.color}; text-align:center;">${mes} ↕</th>`;
-                    html += `<th>Obs. ${nombreLindo(mes)}</th>`;
-                    colIdx += 2;
-                });
-            } else {
-                const cfg = MES_CONFIG[mesTabActivo];
-                html += `<th onclick="sortTable(4, 'salesTable')" style="background:${cfg.color}; text-align:center;">${mesTabActivo} ↕</th>`;
-                html += `<th>Obs. ${nombreLindo(mesTabActivo)}</th>`;
-            }
+            const meses = mesesActivosOrdenados();
+            let colIdx = 4;
+            meses.forEach(mes => {
+                const cfg = MES_CONFIG[mes];
+                html += `<th onclick="sortTable(${colIdx}, 'salesTable')" style="background:${cfg.color}; text-align:center;">${mes} ↕</th>`;
+                html += `<th>Obs. ${nombreLindo(mes)}</th>`;
+                colIdx += 2;
+            });
             thead.innerHTML = html;
-            // Ajustar ancho mínimo según cuántas columnas se muestran
-            document.getElementById('salesTable').style.minWidth = mesTabActivo === 'TODOS' ? '1650px' : '850px';
+            // Ancho mínimo ajustado dinámicamente: 500px de columnas fijas + 275px por cada mes activo
+            document.getElementById('salesTable').style.minWidth = (500 + meses.length * 275) + 'px';
         }
 
         function renderVentas(data) {
@@ -685,11 +715,7 @@
                 };
 
                 let cellsMeses = '';
-                if (mesTabActivo === 'TODOS') {
-                    Object.keys(MES_CONFIG).forEach(mes => { cellsMeses += celdaVentaObs(mes); });
-                } else {
-                    cellsMeses = celdaVentaObs(mesTabActivo);
-                }
+                mesesActivosOrdenados().forEach(mes => { cellsMeses += celdaVentaObs(mes); });
 
                 const badgeAsign = renderBadgeAsignacion(r, 'vta', idxFila);
                 tr.innerHTML = `<td style="font-family:monospace; font-weight:bold;">${r[23]||'---'}</td><td><b>${r[4]}</b></td><td style="color:${colorMap[r[1]]}; font-weight:bold;">${r[1]}</td><td>${badgeAsign}</td>${cellsMeses}`;
